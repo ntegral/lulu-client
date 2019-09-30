@@ -6,7 +6,7 @@
       "url": "http://www.ntegral.com"
     }
   ],
-  "name": "@lulu/client",
+  "name": "@ntegral/lulu",
   "version": "1.0.0",
   "description": "Lulu Print API Client",
   "main": "./dist/index.js",
