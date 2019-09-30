@@ -1,0 +1,36 @@
+{
+  "name": "@lulu/client",
+  "version": "1.0.0",
+  "description": "Lulu Print API Client",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "format": "prettier --write \"lib/**/*.ts\"",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Lulu",
+    "Print",
+    "API"
+  ],
+  "author": "ntegral inc.",
+  "license": "ISC",
+  "dependencies": {
+    "jsonwebtoken": "^8.5.1",
+    "moment": "^2.24.0",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.4"
+  },
+  "devDependencies": {
+    "@types/jest": "^24.0.18",
+    "@types/jsonwebtoken": "^8.3.4",
+    "@types/moment": "^2.13.0",
+    "@types/node": "^12.7.8",
+    "@types/request": "^2.48.3",
+    "@types/request-promise": "^4.1.44",
+    "jest": "^24.9.0",
+    "prettier": "^1.18.2",
+    "ts-jest": "^24.1.0",
+    "typescript": "^3.6.3"
+  }
+}
