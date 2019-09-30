@@ -19,6 +19,7 @@
     "build": "tsc -p tsconfig.build.json",
     "clean": "rm -rf dist",
     "format": "prettier --write \"lib/**/*.ts\"",
+    "publish": "npm publish --access public",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
