@@ -1,6 +1,6 @@
 <p align="center">
   <h3 align="center">
-    @lulu/client
+    @ntegral/lulu
   </h3>
 
   <p align="center">
@@ -33,7 +33,7 @@ a wrapper around the Lulu Print API restful API.
 ## Installation
 
 ```bash
-npm install --save @lulu/client
+npm install --save @ntegral/lulu
 ```
 
 ## Contributing
