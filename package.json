@@ -1,10 +1,23 @@
 {
+  "contributors": [
+    {
+      "name": "Dexter Hardy",
+      "email": "dexter.hardy@ntegral.com",
+      "url": "http://www.ntegral.com"
+    }
+  ],
   "name": "@lulu/client",
   "version": "1.0.0",
   "description": "Lulu Print API Client",
-  "main": "index.js",
+  "main": "./dist/index.js",
+  "typings": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ntegral/lulu-client"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist",
     "format": "prettier --write \"lib/**/*.ts\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
