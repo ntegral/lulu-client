@@ -36,6 +36,27 @@ a wrapper around the Lulu Print API restful API.
 npm install --save @ntegral/lulu
 ```
 
+## Getting Started
+
+The simplest way to use `@ntegral/lulu` is as follows:
+
+```typescript
+import { LuluService } from "@ntegral/lulu";
+
+let ls = new LuluService({
+    client_key: '5ec56f60-3df5-484a-86a4-5fff05f724bb',
+    client_secret: 'b1050b59-61e6-4053-9731-669cd1173553', //3
+    environment: 'development',
+});
+
+//list the print shipping options method //
+ls.shippingOptions.list({ page: 1, page_size: 100, iso_country_code: 'US' }).then((result) => {
+    console.log('resulting shipping options', result);
+}).catch((err) => {
+    console.log('error occurred', err);
+});
+```
+
 ## Contributing
 
 I would greatly appreciate any contributions to make this project better. Please
