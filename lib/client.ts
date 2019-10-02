@@ -93,7 +93,7 @@ export class Client {
         let result = await rp(this.url, opts).catch((this.handleError));
 
         if (result.access_token) {
-            console.log('authentication successful', result.token_type);
+            // console.log('authentication successful', result.token_type);
             this.authorizeHeader(result);
             this.isAuthenticated = true;
         }
@@ -122,7 +122,7 @@ export class Client {
         let result = await rp(this.url, opts).catch((this.handleError));
 
         if (result.access_token) {
-            console.log('refresh_token successful', result.token_type);
+            // console.log('refresh_token successful', result.token_type);
             this.authorizeHeader(result);
             this.isAuthenticated = true;
         }

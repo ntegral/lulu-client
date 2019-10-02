@@ -44,8 +44,8 @@ The simplest way to use `@ntegral/lulu` is as follows:
 import { LuluService } from "@ntegral/lulu";
 
 let ls = new LuluService({
-    client_key: '5ec56f60-3df5-484a-86a4-5fff05f724bb',
-    client_secret: 'b1050b59-61e6-4053-9731-669cd1173553', //3
+    client_key: '5ec56f60-3df5-484a-86a4-555xxx555dsx',
+    client_secret: 'b1050b59-61e6-4053-9731-669cd444xxx', //3
     environment: 'development',
 });
 

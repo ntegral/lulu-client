@@ -6,6 +6,7 @@ class LuluService extends client_1.Client {
     constructor(config) {
         super(config);
         this.shippingOptions = new common_resource_1.resource.ShippingOptions(this);
+        this.printJobs = new common_resource_1.resource.PrintJobs(this);
     }
 }
 exports.LuluService = LuluService;

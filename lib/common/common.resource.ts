@@ -82,13 +82,13 @@ export namespace resource {
          * @return Promise<IList<<ShippingOption>>
          */
         async list(params: ShippingListOptions): Promise<IList<ShippingOption>> {
-            console.log('list params', params);
+            // console.log('list params', params);
             let opts: rp.OptionsWithUri = {
                 method: 'GET',
                 uri: '/print-shipping-options/',
                 qs: params
             };
-            console.log('qs', opts.qs);
+            // console.log('qs', opts.qs);
             return await this.client.request(opts);
         }
     }
@@ -278,13 +278,13 @@ export namespace resource {
          * @return Promise<IList<Printable>>
          */
         async list(params: PrintJobListOptions): Promise<IList<PrintJob>> {
-            console.log('list params', params);
+            // console.log('list params', params);
             let opts: rp.OptionsWithUri = {
                 method: 'GET',
                 uri: '/print-jobs/',
                 qs: params
             };
-            console.log('qs', opts.qs);
+            // console.log('qs', opts.qs);
             return await this.client.request(opts);
         }
 
