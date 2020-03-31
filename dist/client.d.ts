@@ -3,8 +3,8 @@ import * as rp from 'request-promise';
 import { LuluConfigOptions } from './common/interfaces/index';
 import { IAuthenticationResponse } from './common/interfaces/index';
 export declare class Client {
-    client_id: string;
-    client_secret: string;
+    private client_id;
+    private client_secret;
     private decoded;
     private defaultHeaders;
     private defaultRequest;

@@ -79,7 +79,6 @@ class Client {
             };
             let result = yield rp(this.url, opts).catch((this.handleError));
             if (result.access_token) {
-                console.log('authentication successful', result.token_type);
                 this.authorizeHeader(result);
                 this.isAuthenticated = true;
             }
@@ -103,7 +102,6 @@ class Client {
             };
             let result = yield rp(this.url, opts).catch((this.handleError));
             if (result.access_token) {
-                console.log('refresh_token successful', result.token_type);
                 this.authorizeHeader(result);
                 this.isAuthenticated = true;
             }

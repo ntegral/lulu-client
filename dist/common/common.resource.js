@@ -17,13 +17,11 @@ var resource;
         }
         list(params) {
             return __awaiter(this, void 0, void 0, function* () {
-                console.log('list params', params);
                 let opts = {
                     method: 'GET',
                     uri: '/print-shipping-options/',
                     qs: params
                 };
-                console.log('qs', opts.qs);
                 return yield this.client.request(opts);
             });
         }
@@ -35,13 +33,11 @@ var resource;
         }
         list(params) {
             return __awaiter(this, void 0, void 0, function* () {
-                console.log('list params', params);
                 let opts = {
                     method: 'GET',
                     uri: '/print-jobs/',
                     qs: params
                 };
-                console.log('qs', opts.qs);
                 return yield this.client.request(opts);
             });
         }
