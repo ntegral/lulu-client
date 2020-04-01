@@ -90,6 +90,7 @@ export class Client {
             json: true,
         };
 
+        await this.initialization;
         let result = await rp(this.url, opts).catch((this.handleError));
 
         if (result.access_token) {
