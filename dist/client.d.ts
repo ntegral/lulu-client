@@ -18,7 +18,7 @@ export declare class Client {
     init: () => Promise<any>;
     authorizeHeader(data: IAuthenticationResponse): request.Headers;
     getToken(): Promise<any>;
-    refreshToken(data: IAuthenticationResponse): Promise<any>;
+    refreshToken(data: IAuthenticationResponse): Promise<void>;
     request(data: rp.OptionsWithUri): Promise<any>;
     private createHeaders;
     private createRequest;

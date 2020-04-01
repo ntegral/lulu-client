@@ -27,6 +27,7 @@ export class Client {
     private url: string = '';
 
     constructor(config: LuluConfigOptions) {
+        this.isAuthenticated = false;
         this.client_id = config.client_key;
         this.client_secret = config.client_secret;
         if (config.environment == 'production') {
@@ -36,7 +37,7 @@ export class Client {
             this.defaultRequest.baseUrl = this.sandbox;
             this.url = `${this.sandbox}/${this.tokenUrl}`;
         }
-        this.initialization = this.init();
+        // this.initialization = this.init();
     }
 
     init = async () => {
@@ -90,10 +91,10 @@ export class Client {
             json: true,
         };
 
-        await this.initialization;
+        // await this.initialization;
         // let result = await rp(this.url, opts).catch((this.handleError));
 
-        rp(this.url, opts).then((result) => {
+        return await rp(this.url, opts).then((result) => {
             if (result.access_token) {
                 // console.log('authentication successful', result.token_type);
                 this.authorizeHeader(result);
@@ -122,7 +123,7 @@ export class Client {
             json: true,
         };
 
-        await this.initialization;
+        // await this.initialization;
         /* let result = await rp(this.url, opts).catch((this.handleError));
 
         if (result.access_token) {

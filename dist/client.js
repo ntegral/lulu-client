@@ -43,6 +43,7 @@ class Client {
                 throw new TypeError('Unable to initiate due to \n' + error);
             }
         });
+        this.isAuthenticated = false;
         this.client_id = config.client_key;
         this.client_secret = config.client_secret;
         if (config.environment == 'production') {
@@ -53,7 +54,6 @@ class Client {
             this.defaultRequest.baseUrl = this.sandbox;
             this.url = `${this.sandbox}/${this.tokenUrl}`;
         }
-        this.initialization = this.init();
     }
     authorizeHeader(data) {
         const headers = this.defaultHeaders;
@@ -77,13 +77,13 @@ class Client {
                 },
                 json: true,
             };
-            yield this.initialization;
-            let result = yield rp(this.url, opts).catch((this.handleError));
-            if (result.access_token) {
-                this.authorizeHeader(result);
-                this.isAuthenticated = true;
-            }
-            return result;
+            return yield rp(this.url, opts).then((result) => {
+                if (result.access_token) {
+                    this.authorizeHeader(result);
+                    this.isAuthenticated = true;
+                }
+                return result;
+            }).catch(this.handleError);
         });
     }
     refreshToken(data) {
@@ -101,13 +101,13 @@ class Client {
                 },
                 json: true,
             };
-            yield this.initialization;
-            let result = yield rp(this.url, opts).catch((this.handleError));
-            if (result.access_token) {
-                this.authorizeHeader(result);
-                this.isAuthenticated = true;
-            }
-            return result;
+            rp(this.url, opts).then((result) => {
+                if (result.access_token) {
+                    this.authorizeHeader(result);
+                    this.isAuthenticated = true;
+                }
+                return result;
+            }).catch(this.handleError);
         });
     }
     request(data) {
