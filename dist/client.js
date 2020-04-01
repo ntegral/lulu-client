@@ -77,6 +77,7 @@ class Client {
                 },
                 json: true,
             };
+            yield this.initialization;
             let result = yield rp(this.url, opts).catch((this.handleError));
             if (result.access_token) {
                 this.authorizeHeader(result);
