@@ -7,7 +7,7 @@
     }
   ],
   "name": "@ntegral/lulu",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Lulu Print API Client",
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",
@@ -20,7 +20,10 @@
     "clean": "rm -rf dist",
     "format": "prettier --write \"lib/**/*.ts\"",
     "publish:npm": "npm publish --access public",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand"
   },
   "keywords": [
     "Lulu",
@@ -35,6 +38,20 @@
     "request": "^2.88.2",
     "request-promise": "^4.2.5"
   },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "lib",
+    "testRegex": ".spec.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node"
+  },
   "devDependencies": {
     "@types/jest": "^24.9.1",
     "@types/jsonwebtoken": "^8.3.8",
@@ -45,6 +62,6 @@
     "jest": "^24.9.0",
     "prettier": "^1.19.1",
     "ts-jest": "^24.3.0",
-    "typescript": "^3.6.3"
+    "typescript": "^3.8.3"
   }
 }
