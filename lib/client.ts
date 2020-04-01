@@ -91,15 +91,17 @@ export class Client {
         };
 
         await this.initialization;
-        let result = await rp(this.url, opts).catch((this.handleError));
+        // let result = await rp(this.url, opts).catch((this.handleError));
 
-        if (result.access_token) {
-            // console.log('authentication successful', result.token_type);
-            this.authorizeHeader(result);
-            this.isAuthenticated = true;
-        }
+        rp(this.url, opts).then((result) => {
+            if (result.access_token) {
+                // console.log('authentication successful', result.token_type);
+                this.authorizeHeader(result);
+                this.isAuthenticated = true;
+            }
+            return result;
 
-        return result;
+        }).catch(this.handleError);
     }
 
     /**
@@ -121,7 +123,7 @@ export class Client {
         };
 
         await this.initialization;
-        let result = await rp(this.url, opts).catch((this.handleError));
+        /* let result = await rp(this.url, opts).catch((this.handleError));
 
         if (result.access_token) {
             // console.log('refresh_token successful', result.token_type);
@@ -129,7 +131,17 @@ export class Client {
             this.isAuthenticated = true;
         }
 
-        return result;
+        return result; */
+
+        rp(this.url, opts).then((result) => {
+            if (result.access_token) {
+                // console.log('authentication successful', result.token_type);
+                this.authorizeHeader(result);
+                this.isAuthenticated = true;
+            }
+            return result;
+
+        }).catch(this.handleError);
     }
 
     /**
