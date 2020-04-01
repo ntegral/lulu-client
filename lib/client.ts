@@ -37,7 +37,7 @@ export class Client {
             this.defaultRequest.baseUrl = this.sandbox;
             this.url = `${this.sandbox}/${this.tokenUrl}`;
         }
-        this.initialization = this.init();
+        // this.initialization = this.init();
     }
 
     init = async () => {

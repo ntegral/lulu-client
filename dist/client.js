@@ -54,7 +54,6 @@ class Client {
             this.defaultRequest.baseUrl = this.sandbox;
             this.url = `${this.sandbox}/${this.tokenUrl}`;
         }
-        this.initialization = this.init();
     }
     authorizeHeader(data) {
         const headers = this.defaultHeaders;
