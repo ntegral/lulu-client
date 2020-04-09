@@ -49,6 +49,8 @@ let ls = new LuluService({
     environment: 'development',
 });
 
+ls.init();
+
 //list the print shipping options method //
 ls.shippingOptions.list({ page: 1, page_size: 100, iso_country_code: 'US' }).then((result) => {
     console.log('resulting shipping options', result);

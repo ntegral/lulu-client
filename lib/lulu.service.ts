@@ -9,6 +9,7 @@ export class LuluService extends Client {
     constructor(config: LuluConfigOptions) {
         super(config);
 
+        this.init();
         this.shippingOptions = new resource.ShippingOptions(this);
         this.printJobs = new resource.PrintJobs(this);
     }
