@@ -204,6 +204,42 @@ export declare namespace resource {
         tax_country?: string;
         status: Status;
     }
+    interface PrintJobSource {
+        source_url: string;
+        source_md5_sum?: string;
+    }
+    interface PrintJobCover extends PrintJobSource {
+    }
+    interface PrintJobInterior extends PrintJobSource {
+    }
+    interface PrintableNormalizationCover extends PrintJobSource {
+        job_id: string;
+    }
+    interface PrintableNormalizationInterior extends PrintJobSource {
+        job_id: string;
+    }
+    interface PrintJobCreateOptions {
+        contact_email: string;
+        external_id?: string;
+        line_items: PrintJobCreateLineItem[];
+        production_delay?: number;
+        shipping_address: ShippingAddress;
+        shipping_level: ShippingLevel;
+    }
+    interface PrintJobCreateLineItem {
+        cover?: PrintJobCover;
+        interior?: PrintJobInterior;
+        pod_package_id?: string;
+        printable_id?: string;
+        printable_normalization?: {
+            cover: PrintableNormalizationCover;
+            interior: PrintableNormalizationInterior;
+            pod_package_id: string;
+        };
+        external_id: string;
+        quantity: number;
+        title: string;
+    }
     interface IPrintJobs {
         list(params: PrintJobListOptions): Promise<IList<PrintJob>>;
         statistics(params: PrintJobStatisticsOptions): Promise<JobStatistics>;
@@ -211,6 +247,7 @@ export declare namespace resource {
         cost(id: string): Promise<PrintJobCost>;
         status(id: string): Promise<Status>;
         calculation(param: PrintJobCalculationOptions): Promise<PrintJobCost>;
+        create(params: PrintJobCreateOptions): Promise<PrintJob>;
     }
     class PrintJobs implements IPrintJobs {
         private client;
@@ -221,5 +258,6 @@ export declare namespace resource {
         cost(id: string): Promise<PrintJobCost>;
         status(id: string): Promise<Status>;
         calculation(param: PrintJobCalculationOptions): Promise<PrintJobCost>;
+        create(param: PrintJobCreateOptions): Promise<PrintJob>;
     }
 }

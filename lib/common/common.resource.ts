@@ -254,6 +254,45 @@ export namespace resource {
         status: Status;
     }
 
+    export interface PrintJobSource {
+        source_url: string;
+        source_md5_sum?: string;
+    }
+
+    export interface PrintJobCover extends PrintJobSource { }
+    export interface PrintJobInterior extends PrintJobSource {}
+    export interface PrintableNormalizationCover extends PrintJobSource {
+        job_id: string;
+    }
+
+    export interface PrintableNormalizationInterior extends PrintJobSource {
+        job_id: string;
+    }
+
+    export interface PrintJobCreateOptions {
+        contact_email: string;
+        external_id?: string;
+        line_items: PrintJobCreateLineItem[];
+        production_delay?: number;
+        shipping_address: ShippingAddress;
+        shipping_level: ShippingLevel;
+    }
+
+    export interface PrintJobCreateLineItem {
+        cover?: PrintJobCover;
+        interior?: PrintJobInterior;
+        pod_package_id?: string;
+        printable_id?: string;
+        printable_normalization?: {
+            cover: PrintableNormalizationCover;
+            interior: PrintableNormalizationInterior;
+            pod_package_id: string;
+        }
+        external_id: string;
+        quantity: number;
+        title: string;
+    }
+
     export interface IPrintJobs {
         list(params: PrintJobListOptions): Promise<IList<PrintJob>>
 
@@ -266,6 +305,8 @@ export namespace resource {
         status(id: string): Promise<Status>
 
         calculation(param: PrintJobCalculationOptions): Promise<PrintJobCost>
+
+        create(params: PrintJobCreateOptions) : Promise<PrintJob>
     }
 
     export class PrintJobs implements IPrintJobs {
@@ -375,6 +416,26 @@ export namespace resource {
             let opts: rp.OptionsWithUri = {
                 method: 'POST',
                 uri: `/print-job-cost-calculations/`,
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Content-Type': 'application/json',
+                },
+                body: param,
+                json: true
+            };
+
+            return await this.client.request(opts);
+        }
+
+        /**
+         * Create a new Print-Job
+         * @param { PrintJobCreateOptions } params - Print-Jobs are the core resource of the Print API. A Printjob consists of line items, shipping information and some additional metadata.
+         * @return Promise<IList<Printable>>
+         */
+        async create(param: PrintJobCreateOptions): Promise<PrintJob> {
+            let opts: rp.OptionsWithUri = {
+                method: 'POST',
+                uri: `/print-jobs/`,
                 headers: {
                     'Cache-Control': 'no-cache',
                     'Content-Type': 'application/json',

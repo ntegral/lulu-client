@@ -109,6 +109,21 @@ var resource;
                 return yield this.client.request(opts);
             });
         }
+        create(param) {
+            return __awaiter(this, void 0, void 0, function* () {
+                let opts = {
+                    method: 'POST',
+                    uri: `/print-jobs/`,
+                    headers: {
+                        'Cache-Control': 'no-cache',
+                        'Content-Type': 'application/json',
+                    },
+                    body: param,
+                    json: true
+                };
+                return yield this.client.request(opts);
+            });
+        }
     }
     resource.PrintJobs = PrintJobs;
 })(resource = exports.resource || (exports.resource = {}));
