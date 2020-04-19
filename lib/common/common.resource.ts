@@ -17,16 +17,16 @@ export namespace resource {
     export interface ShippingAddress {
         city: string;
         country_code: string;
-        email: string;
-        is_business: boolean;
-        name: string;
+        email?: string;
+        is_business?: boolean;
+        name?: string;
         organization?: string;
-        phone_number: string;
-        postalcode: string;
+        phone_number?: string;
+        postcode: string;
         state_code?: string;
         street1: string;
         street2?: string;
-        title: TitleOptions;
+        title?: TitleOptions;
     }
 
     export interface IPaging {
