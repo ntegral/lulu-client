@@ -35,18 +35,16 @@ class Client {
                     let result = yield this.getToken();
                     return result;
                 }
+                if (this.isAuthenticated && this.decoded && moment.unix(this.decoded.payload.exp).isAfter(now)) {
+                    let result = yield this.getToken();
+                    return result;
+                }
                 if (this.isAuthenticated && this.decoded && !moment.unix(this.decoded.payload.exp).isAfter(now.add(10, 'minutes'))) {
                     let result = yield this.refreshToken(this.decoded);
                 }
             }
             catch (error) {
-                try {
-                    let result = yield this.getToken();
-                    return result;
-                }
-                catch (error) {
-                    throw new TypeError('Unable to initiate due to \n' + error);
-                }
+                throw new TypeError('Unable to initiate due to \n' + error);
             }
         });
         this.isAuthenticated = false;

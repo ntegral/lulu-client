@@ -47,16 +47,15 @@ export class Client {
                 let result = await this.getToken();
                 return result;
             }
-            if (this.isAuthenticated && this.decoded && !moment.unix(this.decoded.payload.exp).isAfter(now.add(10,'minutes'))) {
+            if (this.isAuthenticated && this.decoded && moment.unix(this.decoded.payload.exp).isAfter(now)) { // token has expired, get a new token //
+                let result = await this.getToken();
+                return result;
+            }
+            if (this.isAuthenticated && this.decoded && !moment.unix(this.decoded.payload.exp).isAfter(now.add(10,'minutes'))) { // token hasn't expired renew //
                 let result = await this.refreshToken(this.decoded)
             }
         } catch (error) {
-            try {
-                let result = await this.getToken();
-                return result;
-            } catch (error) {
-                throw new TypeError('Unable to initiate due to \n' + error);
-            }
+            throw new TypeError('Unable to initiate due to \n' + error);
         }
     }
 
@@ -71,6 +70,7 @@ export class Client {
 
         // let decoded: any = jwt.decode(data.access_token, { complete: true });
         this.decoded = jwt.decode(data.access_token, { complete: true });
+        // console.log('expire', moment.unix(this.decoded.payload.exp));
 
         if (typeof headers.Authorization === 'undefined') {
             headers.Authorization = 'Bearer ' + data.access_token;
