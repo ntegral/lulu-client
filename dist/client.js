@@ -40,7 +40,13 @@ class Client {
                 }
             }
             catch (error) {
-                throw new TypeError('Unable to initiate due to \n' + error);
+                try {
+                    let result = yield this.getToken();
+                    return result;
+                }
+                catch (error) {
+                    throw new TypeError('Unable to initiate due to \n' + error);
+                }
             }
         });
         this.isAuthenticated = false;

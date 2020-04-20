@@ -51,7 +51,12 @@ export class Client {
                 let result = await this.refreshToken(this.decoded)
             }
         } catch (error) {
-            throw new TypeError('Unable to initiate due to \n' + error);
+            try {
+                let result = await this.getToken();
+                return result;
+            } catch (error) {
+                throw new TypeError('Unable to initiate due to \n' + error);
+            }
         }
     }
 
