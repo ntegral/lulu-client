@@ -64,12 +64,17 @@ export class Client {
      * @param { IAuthenticationResponse } data - the authentication response from lulu
      * @returns request headers
      */
-    authorizeHeader(data: IAuthenticationResponse) {
+    async authorizeHeader(data: IAuthenticationResponse) {
         // merge access token with default headers
         const headers = this.defaultHeaders;
 
         // let decoded: any = jwt.decode(data.access_token, { complete: true });
-        this.decoded = jwt.decode(data.access_token, { complete: true });
+        try {
+            this.decoded = jwt.decode(data.access_token, { complete: true });
+        } catch (err) {
+            console.log('signature has expired', err);
+            await this.getToken();
+        }
         // console.log('expire', moment.unix(this.decoded.payload.exp));
 
         if (typeof headers.Authorization === 'undefined') {
@@ -99,10 +104,10 @@ export class Client {
         // await this.initialization;
         // let result = await rp(this.url, opts).catch((this.handleError));
 
-        return await rp(this.url, opts).then((result) => {
+        return await rp(this.url, opts).then(async(result) => {
             if (result.access_token) {
                 // console.log('authentication successful', result.token_type);
-                this.authorizeHeader(result);
+                await this.authorizeHeader(result);
                 this.isAuthenticated = true;
             }
             return result;
@@ -139,10 +144,10 @@ export class Client {
 
         return result; */
 
-        rp(this.url, opts).then((result) => {
+        rp(this.url, opts).then(async(result) => {
             if (result.access_token) {
                 // console.log('authentication successful', result.token_type);
-                this.authorizeHeader(result);
+                await this.authorizeHeader(result);
                 this.isAuthenticated = true;
             }
             return result;

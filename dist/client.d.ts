@@ -16,7 +16,7 @@ export declare class Client {
     private url;
     constructor(config: LuluConfigOptions);
     init: () => Promise<any>;
-    authorizeHeader(data: IAuthenticationResponse): request.Headers;
+    authorizeHeader(data: IAuthenticationResponse): Promise<request.Headers>;
     getToken(): Promise<any>;
     refreshToken(data: IAuthenticationResponse): Promise<void>;
     request(data: rp.OptionsWithUri): Promise<any>;

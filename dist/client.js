@@ -60,12 +60,20 @@ class Client {
         }
     }
     authorizeHeader(data) {
-        const headers = this.defaultHeaders;
-        this.decoded = jwt.decode(data.access_token, { complete: true });
-        if (typeof headers.Authorization === 'undefined') {
-            headers.Authorization = 'Bearer ' + data.access_token;
-        }
-        return headers;
+        return __awaiter(this, void 0, void 0, function* () {
+            const headers = this.defaultHeaders;
+            try {
+                this.decoded = jwt.decode(data.access_token, { complete: true });
+            }
+            catch (err) {
+                console.log('signature has expired', err);
+                yield this.getToken();
+            }
+            if (typeof headers.Authorization === 'undefined') {
+                headers.Authorization = 'Bearer ' + data.access_token;
+            }
+            return headers;
+        });
     }
     getToken() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -81,13 +89,13 @@ class Client {
                 },
                 json: true,
             };
-            return yield rp(this.url, opts).then((result) => {
+            return yield rp(this.url, opts).then((result) => __awaiter(this, void 0, void 0, function* () {
                 if (result.access_token) {
-                    this.authorizeHeader(result);
+                    yield this.authorizeHeader(result);
                     this.isAuthenticated = true;
                 }
                 return result;
-            }).catch(this.handleError);
+            })).catch(this.handleError);
         });
     }
     refreshToken(data) {
@@ -105,13 +113,13 @@ class Client {
                 },
                 json: true,
             };
-            rp(this.url, opts).then((result) => {
+            rp(this.url, opts).then((result) => __awaiter(this, void 0, void 0, function* () {
                 if (result.access_token) {
-                    this.authorizeHeader(result);
+                    yield this.authorizeHeader(result);
                     this.isAuthenticated = true;
                 }
                 return result;
-            }).catch(this.handleError);
+            })).catch(this.handleError);
         });
     }
     request(data) {
