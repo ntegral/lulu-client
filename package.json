@@ -7,7 +7,7 @@
     }
   ],
   "name": "@ntegral/lulu",
-  "version": "1.2.8",
+  "version": "1.2.9",
   "description": "Lulu Print API Client",
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",

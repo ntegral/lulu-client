@@ -53,8 +53,9 @@ class Client {
                     this.token = result;
                     resolve(result);
                 }
-                if (this.isAuthenticated && this.decoded && !moment.unix(+this.decoded.payload.exp).isAfter(now.add(10, 'minutes'))) {
+                if (this.isAuthenticated && this.decoded && now.isSameOrAfter(this.clock.add(60, 'seconds'))) {
                     let result = yield this.refreshToken(this.token);
+                    console.log('refreshing token...');
                     resolve(result);
                 }
                 if (this.isAuthenticated && this.decoded && moment.unix(+this.decoded.payload.exp).isAfter(now)) {

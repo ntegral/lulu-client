@@ -60,12 +60,18 @@ export class Client {
                     // return result;
                     resolve(result);
                 }
-                if (this.isAuthenticated && this.decoded && !moment.unix(+this.decoded.payload.exp).isAfter(now.add(10,'minutes'))) { // token hasn't expired renew //
+                if (this.isAuthenticated && this.decoded && now.isSameOrAfter(this.clock.add(60,'seconds'))) {
+                    let result = await this.refreshToken(this.token);
+                    console.log('refreshing token...');
+                    // return result;
+                    resolve(result);
+                }
+                /* if (this.isAuthenticated && this.decoded && !moment.unix(+this.decoded.payload.exp).isAfter(now.add(10,'minutes'))) { // token hasn't expired renew //
                     let result = await this.refreshToken(this.token);
                     // console.log('using of refreshToken');
                     // return result;
                     resolve(result);
-                }
+                } */
                 if (this.isAuthenticated && this.decoded && moment.unix(+this.decoded.payload.exp).isAfter(now)) { // token has expired, get a new token //
                     let result = await this.getToken();
                     this.token = result;
