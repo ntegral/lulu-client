@@ -2,6 +2,7 @@ import * as rp from 'request-promise';
 import { LuluConfigOptions } from './common/interfaces/index';
 import { IAuthenticationResponse } from './common/interfaces/index';
 export declare class Client {
+    private clock;
     private client_id;
     private client_secret;
     private decoded;

@@ -7,6 +7,7 @@ import { LuluConfigOptions, JwtDecodedResponse } from './common/interfaces/index
 import { IAuthenticationResponse } from './common/interfaces/index'
 
 export class Client {
+    private clock: moment.Moment;
     private client_id!: string;
     private client_secret!: string;
     private decoded: JwtDecodedResponse;
@@ -34,6 +35,8 @@ export class Client {
         this.client_secret = config.client_secret;
         this.decoded = {} as JwtDecodedResponse;
         this.token = {} as IAuthenticationResponse;
+        this.clock = moment();
+        console.log('clock', this.clock);
 
         if (config.environment == 'production') {
             this.defaultRequest.baseUrl = this.prod;
@@ -57,13 +60,13 @@ export class Client {
                     // return result;
                     resolve(result);
                 }
-                if (this.isAuthenticated && this.decoded && !moment.unix(this.decoded.payload.exp).isAfter(now.add(10,'minutes'))) { // token hasn't expired renew //
+                if (this.isAuthenticated && this.decoded && !moment.unix(+this.decoded.payload.exp).isAfter(now.add(10,'minutes'))) { // token hasn't expired renew //
                     let result = await this.refreshToken(this.token);
                     // console.log('using of refreshToken');
                     // return result;
                     resolve(result);
                 }
-                if (this.isAuthenticated && this.decoded && moment.unix(this.decoded.payload.exp).isAfter(now)) { // token has expired, get a new token //
+                if (this.isAuthenticated && this.decoded && moment.unix(+this.decoded.payload.exp).isAfter(now)) { // token has expired, get a new token //
                     let result = await this.getToken();
                     this.token = result;
                     // return result;
@@ -90,9 +93,10 @@ export class Client {
                 // data.
                 this.decoded = jwt.decode(data.access_token, {json: true , complete:true}) as JwtDecodedResponse;
                 // console.log('jwt decoded', this.decoded);
-                // this.exp = this.decoded.payload.exp;
-                // let expiry = moment.unix(this.exp).toDate().toLocaleString();
-                // console.log('expiry',expiry);
+                this.exp = this.decoded.payload.exp;
+                console.log('exp',this.exp);
+                let expiry = moment.unix(+this.exp).toLocaleString();
+                console.log('expiry',expiry);
                 this.isAuthenticated = true;
 
                 if (typeof headers.Authorization === 'undefined') {
@@ -194,7 +198,7 @@ export class Client {
     async request(data: rp.OptionsWithUri) {
         // await this.initialization;
         let status = await this.init();
-        // console.log('status of request', status);
+        console.log('status of request', status);
         return this.createRequest(data);
     }
 

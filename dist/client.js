@@ -33,6 +33,8 @@ class Client {
         this.client_secret = config.client_secret;
         this.decoded = {};
         this.token = {};
+        this.clock = moment();
+        console.log('clock', this.clock);
         if (config.environment == 'production') {
             this.defaultRequest.baseUrl = this.prod;
             this.url = `${this.prod}/${this.tokenUrl}`;
@@ -51,11 +53,11 @@ class Client {
                     this.token = result;
                     resolve(result);
                 }
-                if (this.isAuthenticated && this.decoded && !moment.unix(this.decoded.payload.exp).isAfter(now.add(10, 'minutes'))) {
+                if (this.isAuthenticated && this.decoded && !moment.unix(+this.decoded.payload.exp).isAfter(now.add(10, 'minutes'))) {
                     let result = yield this.refreshToken(this.token);
                     resolve(result);
                 }
-                if (this.isAuthenticated && this.decoded && moment.unix(this.decoded.payload.exp).isAfter(now)) {
+                if (this.isAuthenticated && this.decoded && moment.unix(+this.decoded.payload.exp).isAfter(now)) {
                     let result = yield this.getToken();
                     this.token = result;
                     resolve(result);
@@ -72,6 +74,10 @@ class Client {
             return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
                 try {
                     this.decoded = jwt.decode(data.access_token, { json: true, complete: true });
+                    this.exp = this.decoded.payload.exp;
+                    console.log('exp', this.exp);
+                    let expiry = moment.unix(+this.exp).toLocaleString();
+                    console.log('expiry', expiry);
                     this.isAuthenticated = true;
                     if (typeof headers.Authorization === 'undefined') {
                         headers.Authorization = 'Bearer ' + data.access_token;
@@ -128,6 +134,7 @@ class Client {
     request(data) {
         return __awaiter(this, void 0, void 0, function* () {
             let status = yield this.init();
+            console.log('status of request', status);
             return this.createRequest(data);
         });
     }
