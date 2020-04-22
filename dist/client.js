@@ -50,6 +50,7 @@ class Client {
                 let now = moment();
                 if (!this.isAuthenticated) {
                     let result = yield this.getToken();
+                    console.log('init...');
                     this.token = result;
                     resolve(result);
                 }
@@ -61,6 +62,7 @@ class Client {
                 if (this.isAuthenticated && this.decoded && moment.unix(+this.decoded.payload.exp).isAfter(now)) {
                     let result = yield this.getToken();
                     this.token = result;
+                    console.log('renewing token...');
                     resolve(result);
                 }
             }

@@ -55,7 +55,7 @@ export class Client {
                 let now = moment();
                 if (!this.isAuthenticated) {
                     let result = await this.getToken();
-                    // console.log('initial use of init');
+                    console.log('init...');
                     this.token = result;
                     // return result;
                     resolve(result);
@@ -75,6 +75,7 @@ export class Client {
                 if (this.isAuthenticated && this.decoded && moment.unix(+this.decoded.payload.exp).isAfter(now)) { // token has expired, get a new token //
                     let result = await this.getToken();
                     this.token = result;
+                    console.log('renewing token...');
                     // return result;
                     resolve(result);
                 }
