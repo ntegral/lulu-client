@@ -3,13 +3,13 @@ import * as rp from 'request-promise';
 import * as jwt from 'jsonwebtoken';
 import * as moment from 'moment';
 
-import { LuluConfigOptions } from './common/interfaces/index';
+import { LuluConfigOptions, JwtDecodedResponse } from './common/interfaces/index';
 import { IAuthenticationResponse } from './common/interfaces/index'
 
 export class Client {
     private client_id!: string;
     private client_secret!: string;
-    private decoded!: any;
+    private decoded: JwtDecodedResponse;
     private defaultHeaders: request.Headers = {
         'Cache-Control': 'no-cache',
         'Content-Type': 'application/json',
@@ -19,17 +19,22 @@ export class Client {
         uri: '',
         headers: {},
     };
-    private isAuthenticated: boolean = false;
-    private initialization!: Promise<any>;
+    private isAuthenticated:boolean;
+    // private initialization!: Promise<any>;
     private sandbox: string = 'https://api.sandbox.lulu.com';
     private prod: string = 'https://api.lulu.com';
     private tokenUrl: string = 'auth/realms/glasstree/protocol/openid-connect/token';
     private url: string = '';
+    private exp: number = 0;
+    private token: IAuthenticationResponse;
 
     constructor(config: LuluConfigOptions) {
         this.isAuthenticated = false;
         this.client_id = config.client_key;
         this.client_secret = config.client_secret;
+        this.decoded = {} as JwtDecodedResponse;
+        this.token = {} as IAuthenticationResponse;
+
         if (config.environment == 'production') {
             this.defaultRequest.baseUrl = this.prod;
             this.url = `${this.prod}/${this.tokenUrl}`;
@@ -37,26 +42,38 @@ export class Client {
             this.defaultRequest.baseUrl = this.sandbox;
             this.url = `${this.sandbox}/${this.tokenUrl}`;
         }
-        this.initialization = this.init();
+        // this.initialization = this.init();
     }
 
-    init = async () => {
-        try {
-            let now = moment();
-            if (!this.isAuthenticated) {
-                let result = await this.getToken();
-                return result;
+    init(): Promise<IAuthenticationResponse> {
+
+        return new Promise(async(resolve, reject) => {
+            try {
+                let now = moment();
+                if (!this.isAuthenticated) {
+                    let result = await this.getToken();
+                    // console.log('initial use of init');
+                    this.token = result;
+                    // return result;
+                    resolve(result);
+                }
+                if (this.isAuthenticated && this.decoded && !moment.unix(this.decoded.payload.exp).isAfter(now.add(10,'minutes'))) { // token hasn't expired renew //
+                    let result = await this.refreshToken(this.token);
+                    // console.log('using of refreshToken');
+                    // return result;
+                    resolve(result);
+                }
+                if (this.isAuthenticated && this.decoded && moment.unix(this.decoded.payload.exp).isAfter(now)) { // token has expired, get a new token //
+                    let result = await this.getToken();
+                    this.token = result;
+                    // return result;
+                    resolve(result);
+                }
+            } catch (error) {
+                // throw new TypeError('Unable to initiate due to \n' + error);
+                reject(`Unable to initiate due to \n' + ${error}`);
             }
-            if (this.isAuthenticated && this.decoded && moment.unix(this.decoded.payload.exp).isAfter(now)) { // token has expired, get a new token //
-                let result = await this.getToken();
-                return result;
-            }
-            if (this.isAuthenticated && this.decoded && !moment.unix(this.decoded.payload.exp).isAfter(now.add(10,'minutes'))) { // token hasn't expired renew //
-                let result = await this.refreshToken(this.decoded)
-            }
-        } catch (error) {
-            throw new TypeError('Unable to initiate due to \n' + error);
-        }
+        })
     }
 
     /**
@@ -68,26 +85,54 @@ export class Client {
         // merge access token with default headers
         const headers = this.defaultHeaders;
 
+        return new Promise(async(resolve, reject) => {
+            try {
+                // data.
+                this.decoded = jwt.decode(data.access_token, {json: true , complete:true}) as JwtDecodedResponse;
+                // console.log('jwt decoded', this.decoded);
+                // this.exp = this.decoded.payload.exp;
+                // let expiry = moment.unix(this.exp).toDate().toLocaleString();
+                // console.log('expiry',expiry);
+                this.isAuthenticated = true;
+
+                if (typeof headers.Authorization === 'undefined') {
+                    headers.Authorization = 'Bearer ' + data.access_token;
+                }
+                // add access_token, but don't overwrite if header already set
+
+            } catch (err) {
+                console.log('signature has expired', err);
+                // await this.getToken();
+                // reject(err);
+            }
+            resolve(headers);
+        })
+
         // let decoded: any = jwt.decode(data.access_token, { complete: true });
-        try {
-            this.decoded = jwt.decode(data.access_token, { complete: true });
-        } catch (err) {
-            console.log('signature has expired', err);
-            await this.getToken();
-        }
+        // try {
+        //     this.decoded = jwt.decode(data.access_token, { complete: true }) as JwtDecodedResponse;
+        //     console.log('jwt decoded', this.decoded);
+        //     this.exp = this.decoded.payload.exp;
+        //     let expiry = moment.unix(this.exp).toDate().toLocaleString();
+        //     console.log('expiry',expiry);
+        //     this.isAuthenticated = true;
+        // } catch (err) {
+        //     console.log('signature has expired', err);
+        //     await this.getToken();
+        // }
         // console.log('expire', moment.unix(this.decoded.payload.exp));
 
-        if (typeof headers.Authorization === 'undefined') {
+        /* if (typeof headers.Authorization === 'undefined') {
             headers.Authorization = 'Bearer ' + data.access_token;
-        }
+        } */
         // add access_token, but don't overwrite if header already set
-        return headers;
+        // return headers;
     }
 
     /**
      * @returns IAuthenticationResponse
      */
-    async getToken() {
+    getToken(): Promise<IAuthenticationResponse> {
         let opts: rp.RequestPromiseOptions = {
             method: 'POST',
             headers: {
@@ -101,14 +146,11 @@ export class Client {
             json: true,
         };
 
-        // await this.initialization;
-        // let result = await rp(this.url, opts).catch((this.handleError));
-
-        return await rp(this.url, opts).then(async(result) => {
+        return rp(this.url, opts).then(async(result: IAuthenticationResponse) => {
             if (result.access_token) {
                 // console.log('authentication successful', result.token_type);
                 await this.authorizeHeader(result);
-                this.isAuthenticated = true;
+                // this.isAuthenticated = true;
             }
             return result;
 
@@ -118,7 +160,7 @@ export class Client {
     /**
      * @returns IAuthenticationResponse
      */
-    async refreshToken(data: IAuthenticationResponse) {
+    refreshToken(data: IAuthenticationResponse): Promise<IAuthenticationResponse> {
         let opts: rp.RequestPromiseOptions = {
             method: 'POST',
             headers: {
@@ -133,22 +175,11 @@ export class Client {
             json: true,
         };
 
-        // await this.initialization;
-        /* let result = await rp(this.url, opts).catch((this.handleError));
-
-        if (result.access_token) {
-            // console.log('refresh_token successful', result.token_type);
-            this.authorizeHeader(result);
-            this.isAuthenticated = true;
-        }
-
-        return result; */
-
-        rp(this.url, opts).then(async(result) => {
+        return rp(this.url, opts).then(async(result:IAuthenticationResponse) => {
             if (result.access_token) {
                 // console.log('authentication successful', result.token_type);
                 await this.authorizeHeader(result);
-                this.isAuthenticated = true;
+                // this.isAuthenticated = true;
             }
             return result;
 
@@ -161,7 +192,9 @@ export class Client {
      * @returns rp.RequestPromise
      */
     async request(data: rp.OptionsWithUri) {
-        await this.initialization;
+        // await this.initialization;
+        let status = await this.init();
+        // console.log('status of request', status);
         return this.createRequest(data);
     }
 
@@ -180,7 +213,7 @@ export class Client {
     private createRequest(data: rp.OptionsWithUri): rp.RequestPromise {
         // merge data with empty request //
         let request: rp.OptionsWithUri = this.mergeData(this.defaultRequest, data);
-
+        // console.log('authenticated', this.isAuthenticated);
         // add headers //
         request.headers = this.createHeaders(request.headers);
         return rp(request);

@@ -59,7 +59,7 @@ export declare namespace resource {
     class ShippingOptions implements IShippingOptions {
         private client;
         constructor(client: Client);
-        list(params: ShippingListOptions): Promise<IList<ShippingOption>>;
+        list(params?: ShippingListOptions): Promise<IList<ShippingOption>>;
     }
     interface PrintJobListOptions extends IPaging {
         created_after?: string;

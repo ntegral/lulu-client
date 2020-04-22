@@ -23,33 +23,16 @@ class Client {
             uri: '',
             headers: {},
         };
-        this.isAuthenticated = false;
         this.sandbox = 'https://api.sandbox.lulu.com';
         this.prod = 'https://api.lulu.com';
         this.tokenUrl = 'auth/realms/glasstree/protocol/openid-connect/token';
         this.url = '';
-        this.init = () => __awaiter(this, void 0, void 0, function* () {
-            try {
-                let now = moment();
-                if (!this.isAuthenticated) {
-                    let result = yield this.getToken();
-                    return result;
-                }
-                if (this.isAuthenticated && this.decoded && moment.unix(this.decoded.payload.exp).isAfter(now)) {
-                    let result = yield this.getToken();
-                    return result;
-                }
-                if (this.isAuthenticated && this.decoded && !moment.unix(this.decoded.payload.exp).isAfter(now.add(10, 'minutes'))) {
-                    let result = yield this.refreshToken(this.decoded);
-                }
-            }
-            catch (error) {
-                throw new TypeError('Unable to initiate due to \n' + error);
-            }
-        });
+        this.exp = 0;
         this.isAuthenticated = false;
         this.client_id = config.client_key;
         this.client_secret = config.client_secret;
+        this.decoded = {};
+        this.token = {};
         if (config.environment == 'production') {
             this.defaultRequest.baseUrl = this.prod;
             this.url = `${this.prod}/${this.tokenUrl}`;
@@ -58,74 +41,93 @@ class Client {
             this.defaultRequest.baseUrl = this.sandbox;
             this.url = `${this.sandbox}/${this.tokenUrl}`;
         }
-        this.initialization = this.init();
+    }
+    init() {
+        return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                let now = moment();
+                if (!this.isAuthenticated) {
+                    let result = yield this.getToken();
+                    this.token = result;
+                    resolve(result);
+                }
+                if (this.isAuthenticated && this.decoded && !moment.unix(this.decoded.payload.exp).isAfter(now.add(10, 'minutes'))) {
+                    let result = yield this.refreshToken(this.token);
+                    resolve(result);
+                }
+                if (this.isAuthenticated && this.decoded && moment.unix(this.decoded.payload.exp).isAfter(now)) {
+                    let result = yield this.getToken();
+                    this.token = result;
+                    resolve(result);
+                }
+            }
+            catch (error) {
+                reject(`Unable to initiate due to \n' + ${error}`);
+            }
+        }));
     }
     authorizeHeader(data) {
         return __awaiter(this, void 0, void 0, function* () {
             const headers = this.defaultHeaders;
-            try {
-                this.decoded = jwt.decode(data.access_token, { complete: true });
-            }
-            catch (err) {
-                console.log('signature has expired', err);
-                yield this.getToken();
-            }
-            if (typeof headers.Authorization === 'undefined') {
-                headers.Authorization = 'Bearer ' + data.access_token;
-            }
-            return headers;
+            return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
+                try {
+                    this.decoded = jwt.decode(data.access_token, { json: true, complete: true });
+                    this.isAuthenticated = true;
+                    if (typeof headers.Authorization === 'undefined') {
+                        headers.Authorization = 'Bearer ' + data.access_token;
+                    }
+                }
+                catch (err) {
+                    console.log('signature has expired', err);
+                }
+                resolve(headers);
+            }));
         });
     }
     getToken() {
-        return __awaiter(this, void 0, void 0, function* () {
-            let opts = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                form: {
-                    grant_type: 'client_credentials',
-                    client_id: this.client_id,
-                    client_secret: this.client_secret,
-                },
-                json: true,
-            };
-            return yield rp(this.url, opts).then((result) => __awaiter(this, void 0, void 0, function* () {
-                if (result.access_token) {
-                    yield this.authorizeHeader(result);
-                    this.isAuthenticated = true;
-                }
-                return result;
-            })).catch(this.handleError);
-        });
+        let opts = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            form: {
+                grant_type: 'client_credentials',
+                client_id: this.client_id,
+                client_secret: this.client_secret,
+            },
+            json: true,
+        };
+        return rp(this.url, opts).then((result) => __awaiter(this, void 0, void 0, function* () {
+            if (result.access_token) {
+                yield this.authorizeHeader(result);
+            }
+            return result;
+        })).catch(this.handleError);
     }
     refreshToken(data) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let opts = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                form: {
-                    grant_type: 'refresh_token',
-                    client_id: this.client_id,
-                    client_secret: this.client_secret,
-                    refresh_token: data.refresh_token,
-                },
-                json: true,
-            };
-            rp(this.url, opts).then((result) => __awaiter(this, void 0, void 0, function* () {
-                if (result.access_token) {
-                    yield this.authorizeHeader(result);
-                    this.isAuthenticated = true;
-                }
-                return result;
-            })).catch(this.handleError);
-        });
+        let opts = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            form: {
+                grant_type: 'refresh_token',
+                client_id: this.client_id,
+                client_secret: this.client_secret,
+                refresh_token: data.refresh_token,
+            },
+            json: true,
+        };
+        return rp(this.url, opts).then((result) => __awaiter(this, void 0, void 0, function* () {
+            if (result.access_token) {
+                yield this.authorizeHeader(result);
+            }
+            return result;
+        })).catch(this.handleError);
     }
     request(data) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this.initialization;
+            let status = yield this.init();
             return this.createRequest(data);
         });
     }

@@ -81,7 +81,7 @@ export namespace resource {
          * @param { ShippingListOptions } params - the shipping option list options
          * @return Promise<IList<<ShippingOption>>
          */
-        async list(params: ShippingListOptions): Promise<IList<ShippingOption>> {
+        async list(params?: ShippingListOptions): Promise<IList<ShippingOption>> {
             // console.log('list params', params);
             let opts: rp.OptionsWithUri = {
                 method: 'GET',
