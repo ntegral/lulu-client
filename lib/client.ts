@@ -62,7 +62,13 @@ export class Client {
                     // return result;
                     resolve(result);
                 }
-                //if (this.isAuthenticated && this.decoded) {}
+                if (this.isAuthenticated && this.decoded) {
+                    let expiry = moment.unix(+this.decoded.payload.exp).toLocaleString();
+                    console.log('expiry',expiry);
+                    console.log('refresh...');
+                    let result = await this.refreshToken(this.token);
+                    resolve(result);
+                }
                 /* let count = this.clock;
                 if (this.isAuthenticated && this.decoded && now.isSameOrAfter(count.add(60,'seconds'))) {
                     let result = await this.refreshToken(this.token);

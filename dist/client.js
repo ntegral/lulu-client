@@ -57,6 +57,13 @@ class Client {
                         this.token = result;
                         resolve(result);
                     }
+                    if (this.isAuthenticated && this.decoded) {
+                        let expiry = moment.unix(+this.decoded.payload.exp).toLocaleString();
+                        console.log('expiry', expiry);
+                        console.log('refresh...');
+                        let result = yield this.refreshToken(this.token);
+                        resolve(result);
+                    }
                 }
                 catch (error) {
                     reject(`Unable to initiate due to \n' + ${error}`);
