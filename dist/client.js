@@ -62,15 +62,15 @@ class Client {
                         this.token = result;
                         resolve(result);
                     }
-                    else if (this.isAuthenticated && this.decoded && now.isSameOrBefore(moment.unix(+this.decoded.exp).subtract(60, 'minutes'))) {
+                    else if (this.isAuthenticated && this.decoded && now.isSameOrBefore(moment.unix(+this.decoded.exp).subtract(30, 'minutes'))) {
                         console.log('roll on 2');
                         let expiry = moment.unix(+this.decoded.exp).toLocaleString();
                         let result = this.token;
                         resolve(result);
                     }
-                    else if (this.isAuthenticated && this.decoded && now.isSameOrAfter(moment.unix(+this.decoded.exp).subtract(15, 'minutes'))) {
+                    else if (this.isAuthenticated && this.decoded && now.isSameOrAfter(moment.unix(+this.decoded.exp).subtract(30, 'minutes')) && now.isSameOrBefore(moment.unix(+this.decoded.exp))) {
                         console.log('roll on 3');
-                        let result = yield this.getToken(true);
+                        let result = yield this.refreshToken(this.token);
                         this.token = result;
                         resolve(result);
                     }
@@ -84,30 +84,6 @@ class Client {
                 catch (error) {
                     reject(`Unable to initiate due to \n' + ${error}`);
                 }
-            }));
-        });
-    }
-    authorizeHeader(data, refresh) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const headers = this.defaultHeaders;
-            return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
-                try {
-                    console.log('typeof authorization', typeof headers.Authorization);
-                    if (this.config.hasOwnProperty('token')) {
-                        console.log('using tokenKey...');
-                    }
-                    if (typeof headers.Authorization === 'undefined' && this.isAuthenticated === false) {
-                        console.log('using intializing header for the first use..');
-                        headers.Authorization = 'Bearer ' + data.access_token;
-                    }
-                    if (typeof headers.Authorization === 'string' && this.isAuthenticated && refresh && this.config.hasOwnProperty('client_key')) {
-                        headers.Authorization = `Bearer ` + data.access_token;
-                    }
-                }
-                catch (err) {
-                    console.log('header configuration error', err);
-                }
-                resolve(headers);
             }));
         });
     }
@@ -137,19 +113,13 @@ class Client {
                 client_secret: ctx.client_secret
             };
         }
-        console.log('opts', opts);
         return new Promise((resolve, reject) => {
             rp(this.url, opts).then((result) => __awaiter(this, void 0, void 0, function* () {
                 if (result.access_token) {
-                    if (refresh) {
-                        yield this.authorizeHeader(result, refresh);
-                    }
-                    else {
-                        yield this.authorizeHeader(result);
-                    }
+                    this.token = this.mergeData(result, this.token);
                     this.decoded = yield this.decode(result);
-                    this.token = result;
                     this.isAuthenticated = true;
+                    console.log('token now set...', this.token);
                     resolve(result);
                 }
             })).catch((err) => {
@@ -187,10 +157,9 @@ class Client {
         return new Promise((resolve, reject) => {
             rp(this.url, opts).then((result) => __awaiter(this, void 0, void 0, function* () {
                 if (result.access_token) {
-                    this.decoded = jwt.decode(result.access_token, { json: true, complete: true });
-                    this.exp = this.decoded.exp;
+                    this.token = this.mergeData(result, this.token);
+                    this.decoded = yield this.decode(result);
                     this.isAuthenticated = true;
-                    yield this.authorizeHeader(result);
                     resolve(result);
                 }
             })).catch((err) => {
@@ -206,18 +175,14 @@ class Client {
     }
     createHeaders(data) {
         const headers = this.mergeData(this.defaultHeaders, data);
-        if (typeof headers.Authorization === 'undefined') {
-            headers.Authorization = 'Bearer ' + data.access_token;
-        }
-        else if (typeof headers.Authorization === 'string') {
-            headers.Authorization = 'Bearer ' + data.access_token;
+        if (typeof headers.Authorization === 'undefined' && this.token) {
+            headers.Authorization = 'Bearer ' + this.token.access_token;
         }
         return headers;
     }
     createRequest(data) {
         let request = this.mergeData(this.defaultRequest, data);
         request.headers = this.createHeaders(request.headers);
-        console.log('client request', request);
         return new Promise((resolve, reject) => {
             rp(request).then((result) => {
                 resolve(result);

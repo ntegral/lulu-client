@@ -3,7 +3,7 @@ import * as rp from 'request-promise';
 import * as jwt from 'jsonwebtoken';
 import * as moment from 'moment';
 
-import { LuluConfigOptions, JwtDecodedResponse, LuluApiCredConfigOption, JwtPayload } from './common/interfaces/index';
+import { LuluConfigOptions, LuluApiCredConfigOption, JwtPayload } from './common/interfaces/index';
 import { IAuthenticationResponse, LuluApiKeyConfigOption } from './common/interfaces/index';
 
 export class Client {
@@ -11,7 +11,6 @@ export class Client {
     private tokenKey!: string;
     private client_id!: string;
     private client_secret!: string;
-    // private decoded: JwtDecodedResponse;
     private decoded: JwtPayload;
     private defaultHeaders: request.Headers = {
         'Cache-Control': 'no-cache',
@@ -40,7 +39,6 @@ export class Client {
             this.client_secret = ctx.client_secret;
         }
         this.isAuthenticated = false;
-        // this.decoded = {} as JwtDecodedResponse;
         this.decoded = {} as JwtPayload;
         this.token = {} as IAuthenticationResponse;
 
@@ -65,16 +63,15 @@ export class Client {
                     this.token = result;
                     resolve(result);
                 }
-                else if (this.isAuthenticated && this.decoded && now.isSameOrBefore(moment.unix(+this.decoded.exp).subtract(60,'minutes'))) {
+                else if (this.isAuthenticated && this.decoded && now.isSameOrBefore(moment.unix(+this.decoded.exp).subtract(30,'minutes'))) {
                     console.log('roll on 2');
-                    // let expiry = moment.unix(+this.decoded.payload.exp).toLocaleString();
                     let expiry = moment.unix(+this.decoded.exp).toLocaleString();
-                    let result = this.token;// await this.refreshToken(this.token);
+                    let result = this.token;
                     resolve(result);
                 }
-                else if (this.isAuthenticated && this.decoded && now.isSameOrAfter(moment.unix(+this.decoded.exp).subtract(15,'minutes'))) {
+                else if (this.isAuthenticated && this.decoded && now.isSameOrAfter(moment.unix(+this.decoded.exp).subtract(30,'minutes')) && now.isSameOrBefore(moment.unix(+this.decoded.exp))) {
                     console.log('roll on 3')
-                    let result = await this.getToken(true);
+                    let result = await this.refreshToken(this.token);
                     this.token = result;
                     resolve(result);
                 }
@@ -82,7 +79,6 @@ export class Client {
                     console.log('roll on 4')
                     let result = await this.getToken();
                     this.token = result;
-
                     resolve(result);
                 }
             } catch (error) {
@@ -93,41 +89,7 @@ export class Client {
     }
 
     /**
-     * 
-     * @param { IAuthenticationResponse } data - the authentication response from lulu
-     * @returns request headers
-     */
-    async authorizeHeader(data: IAuthenticationResponse, refresh?: boolean) {
-        // merge access token with default headers
-        const headers = this.defaultHeaders;
-
-        return new Promise(async(resolve, reject) => {
-            try {
-                console.log('typeof authorization',typeof headers.Authorization);
-                if (this.config.hasOwnProperty('token')) {
-                    console.log('using tokenKey...');
-                }
-                if (typeof headers.Authorization === 'undefined' && this.isAuthenticated === false) {
-                    console.log('using intializing header for the first use..');
-                    headers.Authorization = 'Bearer ' + data.access_token;
-                }
-                if (typeof headers.Authorization === 'string' && this.isAuthenticated && refresh && this.config.hasOwnProperty('client_key')) {
-                    // update the headers //
-                    headers.Authorization = `Bearer ` + data.access_token;
-                }
-                // add access_token, but don't overwrite if header already set
-
-            } catch (err) {
-                // console.log('signature has expired', err);
-                console.log('header configuration error', err);
-                // await this.getToken();
-                // reject(err);
-            }
-            resolve(headers);
-        });
-    }
-
-    /**
+     * @param { boolean } refresh - the
      * @returns IAuthenticationResponse
      */
     getToken(refresh?:boolean): Promise<IAuthenticationResponse> {
@@ -157,28 +119,25 @@ export class Client {
             };
         }
 
-        console.log('opts', opts);
-
         return new Promise((resolve, reject) => {
             rp(this.url, opts).then(async(result: IAuthenticationResponse) => {
                 if (result.access_token) {
-                    if (refresh) {
-                        await this.authorizeHeader(result,refresh);
-                    } else {
-                        await this.authorizeHeader(result);
-                    }
-
+                    this.token = this.mergeData(result,this.token);
                     this.decoded = await this.decode(result);
-                    this.token = result;
                     this.isAuthenticated = true;
+                    console.log('token now set...', this.token);
                     resolve(result);
                 }
             }).catch((err) => {
                 reject(err);
-            })
+            });
         });
     }
 
+    /**
+     * @param { IAuthenticationResponse } data - the authentication response
+     * @returns Promise<JwtPayload>
+     */
     decode(data: IAuthenticationResponse): Promise<JwtPayload> {
         return new Promise((resolve, reject) => {
             try {
@@ -194,7 +153,8 @@ export class Client {
     }
 
     /**
-     * @returns IAuthenticationResponse
+     * @param { IAuthenticationResponse } data - the authentication response with a valid refresh token
+     * @returns Promise<IAuthenticationResponse>
      */
     refreshToken(data: IAuthenticationResponse): Promise<IAuthenticationResponse> {
         let opts: rp.RequestPromiseOptions = {
@@ -214,12 +174,9 @@ export class Client {
         return new Promise((resolve, reject) => {
             rp(this.url, opts).then(async(result:IAuthenticationResponse) => {
                 if (result.access_token) {
-
-                    this.decoded = jwt.decode(result.access_token, {json: true , complete:true}) as JwtPayload;
-                    this.exp = this.decoded.exp;
-                    // console.log('decoding token', this.decoded);
+                    this.token = this.mergeData(result,this.token);
+                    this.decoded = await this.decode(result);
                     this.isAuthenticated = true;
-                    await this.authorizeHeader(result);
                     resolve(result);
                 }
             }).catch((err) => {
@@ -235,6 +192,7 @@ export class Client {
      */
     async request(data: rp.OptionsWithUri): Promise<any> {
         // console.log('what am i sending here', data);
+        // console.log('default headers', this.defaultHeaders);
         let status = await this.init();
         return await this.createRequest(data);
     }
@@ -245,23 +203,23 @@ export class Client {
 
         // add API key, but don't overwrite if header already set
         // handled in the authorization and of getToken or refreshToken
-        if (typeof (<request.Headers>headers).Authorization === 'undefined') {
-            (<request.Headers>headers).Authorization = 'Bearer ' + data.access_token;
-        }
-        else if (typeof (<request.Headers>headers).Authorization === 'string') {
-            (<request.Headers>headers).Authorization = 'Bearer ' + data.access_token;
+        if (typeof (<request.Headers>headers).Authorization === 'undefined' && this.token) {
+            (<request.Headers>headers).Authorization = 'Bearer ' + this.token.access_token;
         }
         // return
         return headers;
     }
 
+    /**
+     * 
+     * @param { rp.OptionsWithUri } data - the request-promise options with uri
+     * @returns Promise<any>
+     */
     private createRequest(data: rp.OptionsWithUri): Promise<any> {
         // merge data with empty request //
         let request: rp.OptionsWithUri = this.mergeData(this.defaultRequest, data);
         // add headers //
         request.headers = this.createHeaders(request.headers);
-
-        console.log('client request', request);
 
         return new Promise((resolve, reject) => {
             rp(request).then((result) => {

@@ -19,7 +19,6 @@ export declare class Client {
     private token;
     constructor(config: LuluConfigOptions);
     init(): Promise<IAuthenticationResponse>;
-    authorizeHeader(data: IAuthenticationResponse, refresh?: boolean): Promise<unknown>;
     getToken(refresh?: boolean): Promise<IAuthenticationResponse>;
     decode(data: IAuthenticationResponse): Promise<JwtPayload>;
     refreshToken(data: IAuthenticationResponse): Promise<IAuthenticationResponse>;
