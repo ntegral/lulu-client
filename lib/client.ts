@@ -62,11 +62,12 @@ export class Client {
                     // return result;
                     resolve(result);
                 }
-                if (this.isAuthenticated && this.decoded) {
+                if (this.isAuthenticated && this.decoded && now.isSameOrBefore(moment.unix(+this.decoded.payload.exp).subtract(20,'minutes'))) {
                     let expiry = moment.unix(+this.decoded.payload.exp).toLocaleString();
                     console.log('expiry',expiry);
                     console.log('refresh...');
-                    let result = await this.refreshToken(this.token);
+                    console.log('token reused', this.token);
+                    let result = this.token;// await this.refreshToken(this.token);
                     resolve(result);
                 }
                 /* let count = this.clock;
