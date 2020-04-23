@@ -21,7 +21,6 @@ export class Client {
         headers: {},
     };
     private isAuthenticated:boolean;
-    // private initialization!: Promise<any>;
     private sandbox: string = 'https://api.sandbox.lulu.com';
     private prod: string = 'https://api.lulu.com';
     private tokenUrl: string = 'auth/realms/glasstree/protocol/openid-connect/token';
@@ -43,53 +42,30 @@ export class Client {
             this.defaultRequest.baseUrl = this.sandbox;
             this.url = `${this.sandbox}/${this.tokenUrl}`;
         }
-        // this.initialization = this.init();
     }
 
     async init(): Promise<IAuthenticationResponse> {
-        // console.log('clock', this.clock.to);
+
         return new Promise(async(resolve, reject) => {
             try {
                 this.clock = moment();
-                console.log('clock', this.clock.toLocaleString());
                 let now = moment();
-                console.log('now', now.toLocaleString());
-                console.log('isAuthenticated: decoded', this.isAuthenticated, this.decoded);
                 if (!this.isAuthenticated) {
                     let result = await this.getToken();
-                    console.log('init...');
                     this.token = result;
-                    // return result;
+
                     resolve(result);
                 }
-                if (this.isAuthenticated && this.decoded && now.isSameOrBefore(moment.unix(+this.decoded.payload.exp).subtract(55,'minutes'))) {
+                if (this.isAuthenticated && this.decoded && now.isSameOrBefore(moment.unix(+this.decoded.payload.exp).subtract(15,'minutes'))) {
                     let expiry = moment.unix(+this.decoded.payload.exp).toLocaleString();
-                    console.log('expiry',expiry);
-                    console.log('refresh...');
-                    console.log('token reused', this.token);
                     let result = this.token;// await this.refreshToken(this.token);
                     resolve(result);
                 }
-                if (this.isAuthenticated && this.decoded && now.isSameOrAfter(moment.unix(+this.decoded.payload.exp).subtract(55,'minutes'))) {
-                    console.log('getting new token...');
+                if (this.isAuthenticated && this.decoded && now.isSameOrAfter(moment.unix(+this.decoded.payload.exp).subtract(15,'minutes'))) {
                     let result = await this.getToken();
                     this.token = result;
                     resolve(result);
                 }
-                /* let count = this.clock;
-                if (this.isAuthenticated && this.decoded && now.isSameOrAfter(count.add(60,'seconds'))) {
-                    let result = await this.refreshToken(this.token);
-                    console.log('refreshing token...');
-                    // return result;
-                    resolve(result);
-                }
-                if (this.isAuthenticated && this.decoded && moment.unix(+this.decoded.payload.exp).isAfter(now)) { // token has expired, get a new token //
-                    let result = await this.getToken();
-                    this.token = result;
-                    console.log('renewing token...');
-                    // return result;
-                    resolve(result);
-                } */
             } catch (error) {
                 // throw new TypeError('Unable to initiate due to \n' + error);
                 reject(`Unable to initiate due to \n' + ${error}`);
@@ -108,13 +84,9 @@ export class Client {
 
         return new Promise(async(resolve, reject) => {
             try {
-                // data.
                 this.decoded = jwt.decode(data.access_token, {json: true , complete:true}) as JwtDecodedResponse;
-                // console.log('jwt decoded', this.decoded);
+
                 this.exp = this.decoded.payload.exp;
-                console.log('exp',this.exp);
-                let expiry = moment.unix(+this.exp).toLocaleString();
-                console.log('expiry',expiry);
                 this.isAuthenticated = true;
 
                 if (typeof headers.Authorization === 'undefined') {
@@ -128,27 +100,7 @@ export class Client {
                 // reject(err);
             }
             resolve(headers);
-        })
-
-        // let decoded: any = jwt.decode(data.access_token, { complete: true });
-        // try {
-        //     this.decoded = jwt.decode(data.access_token, { complete: true }) as JwtDecodedResponse;
-        //     console.log('jwt decoded', this.decoded);
-        //     this.exp = this.decoded.payload.exp;
-        //     let expiry = moment.unix(this.exp).toDate().toLocaleString();
-        //     console.log('expiry',expiry);
-        //     this.isAuthenticated = true;
-        // } catch (err) {
-        //     console.log('signature has expired', err);
-        //     await this.getToken();
-        // }
-        // console.log('expire', moment.unix(this.decoded.payload.exp));
-
-        /* if (typeof headers.Authorization === 'undefined') {
-            headers.Authorization = 'Bearer ' + data.access_token;
-        } */
-        // add access_token, but don't overwrite if header already set
-        // return headers;
+        });
     }
 
     /**
@@ -177,19 +129,7 @@ export class Client {
             }).catch((err) => {
                 reject(err);
             })
-        })
-
-        /* 
-        return rp(this.url, opts).then(async(result: IAuthenticationResponse) => {
-            if (result.access_token) {
-                // console.log('authentication successful', result.token_type);
-                await this.authorizeHeader(result);
-                // this.isAuthenticated = true;
-            }
-            return result;
-
-        }).catch(this.handleError); 
-        */
+        });
     }
 
     /**
@@ -220,18 +160,6 @@ export class Client {
                 reject(err);
             })
         });
-
-        /* 
-        return rp(this.url, opts).then(async(result:IAuthenticationResponse) => {
-            if (result.access_token) {
-                // console.log('authentication successful', result.token_type);
-                await this.authorizeHeader(result);
-                // this.isAuthenticated = true;
-            }
-            return result;
-
-        }).catch(this.handleError); 
-        */
     }
 
     /**
@@ -240,9 +168,6 @@ export class Client {
      * @returns rp.RequestPromise
      */
     async request(data: rp.OptionsWithUri): Promise<any> {
-        // await this.initialization;
-        // let status = await this.init();
-        // console.log('status of request', status);
         let status = await this.init();
         return this.createRequest(data);
     }
@@ -262,7 +187,6 @@ export class Client {
     private createRequest(data: rp.OptionsWithUri): Promise<any> {
         // merge data with empty request //
         let request: rp.OptionsWithUri = this.mergeData(this.defaultRequest, data);
-        // console.log('authenticated', this.isAuthenticated);
         // add headers //
         request.headers = this.createHeaders(request.headers);
 
@@ -272,8 +196,7 @@ export class Client {
             }).catch((error)=> {
                 reject(error);
             })
-        })
-        // return rp(request);
+        });
     }
 
     private handleError(error: any) {

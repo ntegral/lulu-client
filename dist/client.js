@@ -47,26 +47,18 @@ class Client {
             return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
                 try {
                     this.clock = moment();
-                    console.log('clock', this.clock.toLocaleString());
                     let now = moment();
-                    console.log('now', now.toLocaleString());
-                    console.log('isAuthenticated: decoded', this.isAuthenticated, this.decoded);
                     if (!this.isAuthenticated) {
                         let result = yield this.getToken();
-                        console.log('init...');
                         this.token = result;
                         resolve(result);
                     }
-                    if (this.isAuthenticated && this.decoded && now.isSameOrBefore(moment.unix(+this.decoded.payload.exp).subtract(55, 'minutes'))) {
+                    if (this.isAuthenticated && this.decoded && now.isSameOrBefore(moment.unix(+this.decoded.payload.exp).subtract(15, 'minutes'))) {
                         let expiry = moment.unix(+this.decoded.payload.exp).toLocaleString();
-                        console.log('expiry', expiry);
-                        console.log('refresh...');
-                        console.log('token reused', this.token);
                         let result = this.token;
                         resolve(result);
                     }
-                    if (this.isAuthenticated && this.decoded && now.isSameOrAfter(moment.unix(+this.decoded.payload.exp).subtract(55, 'minutes'))) {
-                        console.log('getting new token...');
+                    if (this.isAuthenticated && this.decoded && now.isSameOrAfter(moment.unix(+this.decoded.payload.exp).subtract(15, 'minutes'))) {
                         let result = yield this.getToken();
                         this.token = result;
                         resolve(result);
@@ -85,9 +77,6 @@ class Client {
                 try {
                     this.decoded = jwt.decode(data.access_token, { json: true, complete: true });
                     this.exp = this.decoded.payload.exp;
-                    console.log('exp', this.exp);
-                    let expiry = moment.unix(+this.exp).toLocaleString();
-                    console.log('expiry', expiry);
                     this.isAuthenticated = true;
                     if (typeof headers.Authorization === 'undefined') {
                         headers.Authorization = 'Bearer ' + data.access_token;
