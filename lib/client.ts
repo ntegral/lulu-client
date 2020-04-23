@@ -168,6 +168,7 @@ export class Client {
                         await this.authorizeHeader(result);
                     }
 
+                    this.decoded = await this.decode(result);
                     this.token = result;
                     this.isAuthenticated = true;
                     resolve(result);
@@ -245,6 +246,9 @@ export class Client {
         // add API key, but don't overwrite if header already set
         // handled in the authorization and of getToken or refreshToken
         if (typeof (<request.Headers>headers).Authorization === 'undefined') {
+            (<request.Headers>headers).Authorization = 'Bearer ' + data.access_token;
+        }
+        else if (typeof (<request.Headers>headers).Authorization === 'string') {
             (<request.Headers>headers).Authorization = 'Bearer ' + data.access_token;
         }
         // return

@@ -147,6 +147,7 @@ class Client {
                     else {
                         yield this.authorizeHeader(result);
                     }
+                    this.decoded = yield this.decode(result);
                     this.token = result;
                     this.isAuthenticated = true;
                     resolve(result);
@@ -206,6 +207,9 @@ class Client {
     createHeaders(data) {
         const headers = this.mergeData(this.defaultHeaders, data);
         if (typeof headers.Authorization === 'undefined') {
+            headers.Authorization = 'Bearer ' + data.access_token;
+        }
+        else if (typeof headers.Authorization === 'string') {
             headers.Authorization = 'Bearer ' + data.access_token;
         }
         return headers;
