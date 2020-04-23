@@ -33,8 +33,6 @@ class Client {
         this.client_secret = config.client_secret;
         this.decoded = {};
         this.token = {};
-        this.clock = moment();
-        console.log('clock', this.clock);
         if (config.environment == 'production') {
             this.defaultRequest.baseUrl = this.prod;
             this.url = `${this.prod}/${this.tokenUrl}`;
@@ -45,31 +43,26 @@ class Client {
         }
     }
     init() {
-        return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
-            try {
-                let now = moment();
-                if (!this.isAuthenticated) {
-                    let result = yield this.getToken();
-                    console.log('init...');
-                    this.token = result;
-                    resolve(result);
+        return __awaiter(this, void 0, void 0, function* () {
+            return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
+                try {
+                    this.clock = moment();
+                    console.log('clock', this.clock.toLocaleString());
+                    let now = moment();
+                    console.log('now', now.toLocaleString());
+                    console.log('isAuthenticated: decoded', this.isAuthenticated, this.decoded);
+                    if (!this.isAuthenticated) {
+                        let result = yield this.getToken();
+                        console.log('init...');
+                        this.token = result;
+                        resolve(result);
+                    }
                 }
-                if (this.isAuthenticated && this.decoded && now.isSameOrAfter(this.clock.add(60, 'seconds'))) {
-                    let result = yield this.refreshToken(this.token);
-                    console.log('refreshing token...');
-                    resolve(result);
+                catch (error) {
+                    reject(`Unable to initiate due to \n' + ${error}`);
                 }
-                if (this.isAuthenticated && this.decoded && moment.unix(+this.decoded.payload.exp).isAfter(now)) {
-                    let result = yield this.getToken();
-                    this.token = result;
-                    console.log('renewing token...');
-                    resolve(result);
-                }
-            }
-            catch (error) {
-                reject(`Unable to initiate due to \n' + ${error}`);
-            }
-        }));
+            }));
+        });
     }
     authorizeHeader(data) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -106,12 +99,16 @@ class Client {
             },
             json: true,
         };
-        return rp(this.url, opts).then((result) => __awaiter(this, void 0, void 0, function* () {
-            if (result.access_token) {
-                yield this.authorizeHeader(result);
-            }
-            return result;
-        })).catch(this.handleError);
+        return new Promise((resolve, reject) => {
+            rp(this.url, opts).then((result) => __awaiter(this, void 0, void 0, function* () {
+                if (result.access_token) {
+                    yield this.authorizeHeader(result);
+                    resolve(result);
+                }
+            })).catch((err) => {
+                reject(err);
+            });
+        });
     }
     refreshToken(data) {
         let opts = {
@@ -127,17 +124,20 @@ class Client {
             },
             json: true,
         };
-        return rp(this.url, opts).then((result) => __awaiter(this, void 0, void 0, function* () {
-            if (result.access_token) {
-                yield this.authorizeHeader(result);
-            }
-            return result;
-        })).catch(this.handleError);
+        return new Promise((resolve, reject) => {
+            rp(this.url, opts).then((result) => __awaiter(this, void 0, void 0, function* () {
+                if (result.access_token) {
+                    yield this.authorizeHeader(result);
+                    resolve(result);
+                }
+            })).catch((err) => {
+                reject(err);
+            });
+        });
     }
     request(data) {
         return __awaiter(this, void 0, void 0, function* () {
             let status = yield this.init();
-            console.log('status of request', status);
             return this.createRequest(data);
         });
     }
@@ -151,7 +151,13 @@ class Client {
     createRequest(data) {
         let request = this.mergeData(this.defaultRequest, data);
         request.headers = this.createHeaders(request.headers);
-        return rp(request);
+        return new Promise((resolve, reject) => {
+            rp(request).then((result) => {
+                resolve(result);
+            }).catch((error) => {
+                reject(error);
+            });
+        });
     }
     handleError(error) {
         if (error.error) {

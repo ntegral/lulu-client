@@ -7,7 +7,7 @@ import { LuluConfigOptions, JwtDecodedResponse } from './common/interfaces/index
 import { IAuthenticationResponse } from './common/interfaces/index'
 
 export class Client {
-    private clock: moment.Moment;
+    private clock!: moment.Moment;
     private client_id!: string;
     private client_secret!: string;
     private decoded: JwtDecodedResponse;
@@ -35,8 +35,6 @@ export class Client {
         this.client_secret = config.client_secret;
         this.decoded = {} as JwtDecodedResponse;
         this.token = {} as IAuthenticationResponse;
-        this.clock = moment();
-        console.log('clock', this.clock);
 
         if (config.environment == 'production') {
             this.defaultRequest.baseUrl = this.prod;
@@ -48,11 +46,15 @@ export class Client {
         // this.initialization = this.init();
     }
 
-    init(): Promise<IAuthenticationResponse> {
-
+    async init(): Promise<IAuthenticationResponse> {
+        // console.log('clock', this.clock.to);
         return new Promise(async(resolve, reject) => {
             try {
+                this.clock = moment();
+                console.log('clock', this.clock.toLocaleString());
                 let now = moment();
+                console.log('now', now.toLocaleString());
+                console.log('isAuthenticated: decoded', this.isAuthenticated, this.decoded);
                 if (!this.isAuthenticated) {
                     let result = await this.getToken();
                     console.log('init...');
@@ -60,25 +62,21 @@ export class Client {
                     // return result;
                     resolve(result);
                 }
-                if (this.isAuthenticated && this.decoded && now.isSameOrAfter(this.clock.add(60,'seconds'))) {
+                //if (this.isAuthenticated && this.decoded) {}
+                /* let count = this.clock;
+                if (this.isAuthenticated && this.decoded && now.isSameOrAfter(count.add(60,'seconds'))) {
                     let result = await this.refreshToken(this.token);
                     console.log('refreshing token...');
                     // return result;
                     resolve(result);
                 }
-                /* if (this.isAuthenticated && this.decoded && !moment.unix(+this.decoded.payload.exp).isAfter(now.add(10,'minutes'))) { // token hasn't expired renew //
-                    let result = await this.refreshToken(this.token);
-                    // console.log('using of refreshToken');
-                    // return result;
-                    resolve(result);
-                } */
                 if (this.isAuthenticated && this.decoded && moment.unix(+this.decoded.payload.exp).isAfter(now)) { // token has expired, get a new token //
                     let result = await this.getToken();
                     this.token = result;
                     console.log('renewing token...');
                     // return result;
                     resolve(result);
-                }
+                } */
             } catch (error) {
                 // throw new TypeError('Unable to initiate due to \n' + error);
                 reject(`Unable to initiate due to \n' + ${error}`);
@@ -157,6 +155,18 @@ export class Client {
             json: true,
         };
 
+        return new Promise((resolve, reject) => {
+            rp(this.url, opts).then(async(result) => {
+                if (result.access_token) {
+                    await this.authorizeHeader(result);
+                    resolve(result);
+                }
+            }).catch((err) => {
+                reject(err);
+            })
+        })
+
+        /* 
         return rp(this.url, opts).then(async(result: IAuthenticationResponse) => {
             if (result.access_token) {
                 // console.log('authentication successful', result.token_type);
@@ -165,7 +175,8 @@ export class Client {
             }
             return result;
 
-        }).catch(this.handleError);
+        }).catch(this.handleError); 
+        */
     }
 
     /**
@@ -186,6 +197,18 @@ export class Client {
             json: true,
         };
 
+        return new Promise((resolve, reject) => {
+            rp(this.url, opts).then(async(result) => {
+                if (result.access_token) {
+                    await this.authorizeHeader(result);
+                    resolve(result);
+                }
+            }).catch((err) => {
+                reject(err);
+            })
+        });
+
+        /* 
         return rp(this.url, opts).then(async(result:IAuthenticationResponse) => {
             if (result.access_token) {
                 // console.log('authentication successful', result.token_type);
@@ -194,7 +217,8 @@ export class Client {
             }
             return result;
 
-        }).catch(this.handleError);
+        }).catch(this.handleError); 
+        */
     }
 
     /**
@@ -202,10 +226,11 @@ export class Client {
      * @param { rp.OptionsWithUri } data - the request-promise options with uri
      * @returns rp.RequestPromise
      */
-    async request(data: rp.OptionsWithUri) {
+    async request(data: rp.OptionsWithUri): Promise<any> {
         // await this.initialization;
+        // let status = await this.init();
+        // console.log('status of request', status);
         let status = await this.init();
-        console.log('status of request', status);
         return this.createRequest(data);
     }
 
@@ -221,13 +246,21 @@ export class Client {
         return headers;
     }
 
-    private createRequest(data: rp.OptionsWithUri): rp.RequestPromise {
+    private createRequest(data: rp.OptionsWithUri): Promise<any> {
         // merge data with empty request //
         let request: rp.OptionsWithUri = this.mergeData(this.defaultRequest, data);
         // console.log('authenticated', this.isAuthenticated);
         // add headers //
         request.headers = this.createHeaders(request.headers);
-        return rp(request);
+
+        return new Promise((resolve, reject) => {
+            rp(request).then((result) => {
+                resolve(result);
+            }).catch((error)=> {
+                reject(error);
+            })
+        })
+        // return rp(request);
     }
 
     private handleError(error: any) {
