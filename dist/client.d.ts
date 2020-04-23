@@ -1,8 +1,10 @@
 import * as rp from 'request-promise';
-import { LuluConfigOptions } from './common/interfaces/index';
+import { LuluConfigOptions, JwtPayload } from './common/interfaces/index';
 import { IAuthenticationResponse } from './common/interfaces/index';
 export declare class Client {
+    private config;
     private clock;
+    private tokenKey;
     private client_id;
     private client_secret;
     private decoded;
@@ -17,8 +19,9 @@ export declare class Client {
     private token;
     constructor(config: LuluConfigOptions);
     init(): Promise<IAuthenticationResponse>;
-    authorizeHeader(data: IAuthenticationResponse): Promise<unknown>;
-    getToken(): Promise<IAuthenticationResponse>;
+    authorizeHeader(data: IAuthenticationResponse, refresh?: boolean): Promise<unknown>;
+    getToken(refresh?: boolean): Promise<IAuthenticationResponse>;
+    decode(data: IAuthenticationResponse): Promise<JwtPayload>;
     refreshToken(data: IAuthenticationResponse): Promise<IAuthenticationResponse>;
     request(data: rp.OptionsWithUri): Promise<any>;
     private createHeaders;

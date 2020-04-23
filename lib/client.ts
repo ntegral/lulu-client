@@ -3,14 +3,16 @@ import * as rp from 'request-promise';
 import * as jwt from 'jsonwebtoken';
 import * as moment from 'moment';
 
-import { LuluConfigOptions, JwtDecodedResponse } from './common/interfaces/index';
-import { IAuthenticationResponse } from './common/interfaces/index'
+import { LuluConfigOptions, JwtDecodedResponse, LuluApiCredConfigOption, JwtPayload } from './common/interfaces/index';
+import { IAuthenticationResponse, LuluApiKeyConfigOption } from './common/interfaces/index';
 
 export class Client {
     private clock!: moment.Moment;
+    private tokenKey!: string;
     private client_id!: string;
     private client_secret!: string;
-    private decoded: JwtDecodedResponse;
+    // private decoded: JwtDecodedResponse;
+    private decoded: JwtPayload;
     private defaultHeaders: request.Headers = {
         'Cache-Control': 'no-cache',
         'Content-Type': 'application/json',
@@ -28,11 +30,18 @@ export class Client {
     private exp: number = 0;
     private token: IAuthenticationResponse;
 
-    constructor(config: LuluConfigOptions) {
+    constructor(private config: LuluConfigOptions) {
+        if (config.hasOwnProperty('token')) {
+             const ctx = config as (LuluApiKeyConfigOption);
+             this.tokenKey = ctx.token;
+        } else {
+            const ctx = config as (LuluApiCredConfigOption);
+            this.client_id = ctx.client_key;
+            this.client_secret = ctx.client_secret;
+        }
         this.isAuthenticated = false;
-        this.client_id = config.client_key;
-        this.client_secret = config.client_secret;
-        this.decoded = {} as JwtDecodedResponse;
+        // this.decoded = {} as JwtDecodedResponse;
+        this.decoded = {} as JwtPayload;
         this.token = {} as IAuthenticationResponse;
 
         if (config.environment == 'production') {
@@ -52,18 +61,28 @@ export class Client {
                 let now = moment();
                 if (!this.isAuthenticated) {
                     let result = await this.getToken();
+                    console.log('roll on 1');
                     this.token = result;
-
                     resolve(result);
                 }
-                if (this.isAuthenticated && this.decoded && now.isSameOrBefore(moment.unix(+this.decoded.payload.exp).subtract(15,'minutes'))) {
-                    let expiry = moment.unix(+this.decoded.payload.exp).toLocaleString();
+                else if (this.isAuthenticated && this.decoded && now.isSameOrBefore(moment.unix(+this.decoded.exp).subtract(60,'minutes'))) {
+                    console.log('roll on 2');
+                    // let expiry = moment.unix(+this.decoded.payload.exp).toLocaleString();
+                    let expiry = moment.unix(+this.decoded.exp).toLocaleString();
                     let result = this.token;// await this.refreshToken(this.token);
                     resolve(result);
                 }
-                if (this.isAuthenticated && this.decoded && now.isSameOrAfter(moment.unix(+this.decoded.payload.exp).subtract(15,'minutes'))) {
+                else if (this.isAuthenticated && this.decoded && now.isSameOrAfter(moment.unix(+this.decoded.exp).subtract(15,'minutes'))) {
+                    console.log('roll on 3')
+                    let result = await this.getToken(true);
+                    this.token = result;
+                    resolve(result);
+                }
+                else {
+                    console.log('roll on 4')
                     let result = await this.getToken();
                     this.token = result;
+
                     resolve(result);
                 }
             } catch (error) {
@@ -78,24 +97,29 @@ export class Client {
      * @param { IAuthenticationResponse } data - the authentication response from lulu
      * @returns request headers
      */
-    async authorizeHeader(data: IAuthenticationResponse) {
+    async authorizeHeader(data: IAuthenticationResponse, refresh?: boolean) {
         // merge access token with default headers
         const headers = this.defaultHeaders;
 
         return new Promise(async(resolve, reject) => {
             try {
-                this.decoded = jwt.decode(data.access_token, {json: true , complete:true}) as JwtDecodedResponse;
-
-                this.exp = this.decoded.payload.exp;
-                this.isAuthenticated = true;
-
-                if (typeof headers.Authorization === 'undefined') {
+                console.log('typeof authorization',typeof headers.Authorization);
+                if (this.config.hasOwnProperty('token')) {
+                    console.log('using tokenKey...');
+                }
+                if (typeof headers.Authorization === 'undefined' && this.isAuthenticated === false) {
+                    console.log('using intializing header for the first use..');
                     headers.Authorization = 'Bearer ' + data.access_token;
+                }
+                if (typeof headers.Authorization === 'string' && this.isAuthenticated && refresh && this.config.hasOwnProperty('client_key')) {
+                    // update the headers //
+                    headers.Authorization = `Bearer ` + data.access_token;
                 }
                 // add access_token, but don't overwrite if header already set
 
             } catch (err) {
-                console.log('signature has expired', err);
+                // console.log('signature has expired', err);
+                console.log('header configuration error', err);
                 // await this.getToken();
                 // reject(err);
             }
@@ -106,29 +130,65 @@ export class Client {
     /**
      * @returns IAuthenticationResponse
      */
-    getToken(): Promise<IAuthenticationResponse> {
+    getToken(refresh?:boolean): Promise<IAuthenticationResponse> {
         let opts: rp.RequestPromiseOptions = {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            form: {
-                grant_type: 'client_credentials',
-                client_id: this.client_id,
-                client_secret: this.client_secret,
-            },
             json: true,
         };
+        if (this.config.hasOwnProperty('token')) {
+            const ctx = this.config as (LuluApiKeyConfigOption);
+            opts.headers = {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Authorization': `Basic ${ctx.token}`
+            };
+            opts.form = {
+                grant_type: 'client_credentials'
+            };
+
+        } else {
+            const ctx = this.config as (LuluApiCredConfigOption);
+            opts.headers = {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            };
+            opts.form = {
+                grant_type: 'client_credentials',
+                client_id: ctx.client_key,
+                client_secret: ctx.client_secret
+            };
+        }
+
+        console.log('opts', opts);
 
         return new Promise((resolve, reject) => {
-            rp(this.url, opts).then(async(result) => {
+            rp(this.url, opts).then(async(result: IAuthenticationResponse) => {
                 if (result.access_token) {
-                    await this.authorizeHeader(result);
+                    if (refresh) {
+                        await this.authorizeHeader(result,refresh);
+                    } else {
+                        await this.authorizeHeader(result);
+                    }
+
+                    this.token = result;
+                    this.isAuthenticated = true;
                     resolve(result);
                 }
             }).catch((err) => {
                 reject(err);
             })
+        });
+    }
+
+    decode(data: IAuthenticationResponse): Promise<JwtPayload> {
+        return new Promise((resolve, reject) => {
+            try {
+                const _decoded: JwtPayload = jwt.decode(data.access_token, { json: true }) as JwtPayload;
+                //const _decoded = jwt.verify(data.access_token, (this.config as LuluApiCredConfigOption).client_secret) as JwtDecodedResponse;
+                this.exp = +_decoded.exp;
+                console.log("_decoded", _decoded);
+                resolve(_decoded);
+            } catch (err) {
+                reject(err);
+            }
         });
     }
 
@@ -151,8 +211,13 @@ export class Client {
         };
 
         return new Promise((resolve, reject) => {
-            rp(this.url, opts).then(async(result) => {
+            rp(this.url, opts).then(async(result:IAuthenticationResponse) => {
                 if (result.access_token) {
+
+                    this.decoded = jwt.decode(result.access_token, {json: true , complete:true}) as JwtPayload;
+                    this.exp = this.decoded.exp;
+                    // console.log('decoding token', this.decoded);
+                    this.isAuthenticated = true;
                     await this.authorizeHeader(result);
                     resolve(result);
                 }
@@ -168,8 +233,9 @@ export class Client {
      * @returns rp.RequestPromise
      */
     async request(data: rp.OptionsWithUri): Promise<any> {
+        // console.log('what am i sending here', data);
         let status = await this.init();
-        return this.createRequest(data);
+        return await this.createRequest(data);
     }
 
     private createHeaders(data: any) {
@@ -177,6 +243,7 @@ export class Client {
         const headers = this.mergeData(this.defaultHeaders, data);
 
         // add API key, but don't overwrite if header already set
+        // handled in the authorization and of getToken or refreshToken
         if (typeof (<request.Headers>headers).Authorization === 'undefined') {
             (<request.Headers>headers).Authorization = 'Bearer ' + data.access_token;
         }
@@ -189,6 +256,8 @@ export class Client {
         let request: rp.OptionsWithUri = this.mergeData(this.defaultRequest, data);
         // add headers //
         request.headers = this.createHeaders(request.headers);
+
+        console.log('client request', request);
 
         return new Promise((resolve, reject) => {
             rp(request).then((result) => {
