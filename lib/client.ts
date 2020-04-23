@@ -62,12 +62,18 @@ export class Client {
                     // return result;
                     resolve(result);
                 }
-                if (this.isAuthenticated && this.decoded && now.isSameOrBefore(moment.unix(+this.decoded.payload.exp).subtract(20,'minutes'))) {
+                if (this.isAuthenticated && this.decoded && now.isSameOrBefore(moment.unix(+this.decoded.payload.exp).subtract(55,'minutes'))) {
                     let expiry = moment.unix(+this.decoded.payload.exp).toLocaleString();
                     console.log('expiry',expiry);
                     console.log('refresh...');
                     console.log('token reused', this.token);
                     let result = this.token;// await this.refreshToken(this.token);
+                    resolve(result);
+                }
+                if (this.isAuthenticated && this.decoded && now.isSameOrAfter(moment.unix(+this.decoded.payload.exp).subtract(55,'minutes'))) {
+                    console.log('getting new token...');
+                    let result = await this.getToken();
+                    this.token = result;
                     resolve(result);
                 }
                 /* let count = this.clock;
