@@ -54,28 +54,23 @@ class Client {
         return __awaiter(this, void 0, void 0, function* () {
             return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
                 try {
-                    this.clock = moment();
                     let now = moment();
                     if (!this.isAuthenticated) {
                         let result = yield this.getToken();
-                        console.log('roll on 1');
                         this.token = result;
                         resolve(result);
                     }
                     else if (this.isAuthenticated && this.decoded && now.isSameOrBefore(moment.unix(+this.decoded.exp).subtract(30, 'minutes'))) {
-                        console.log('roll on 2');
                         let expiry = moment.unix(+this.decoded.exp).toLocaleString();
                         let result = this.token;
                         resolve(result);
                     }
-                    else if (this.isAuthenticated && this.decoded && now.isSameOrAfter(moment.unix(+this.decoded.exp).subtract(30, 'minutes')) && now.isSameOrBefore(moment.unix(+this.decoded.exp))) {
-                        console.log('roll on 3');
+                    else if (this.isAuthenticated && this.decoded && now.isSameOrAfter(moment.unix(+this.decoded.exp).subtract(30, 'minutes')) && now.isBefore(moment.unix(+this.decoded.exp).subtract(10, 'minutes'))) {
                         let result = yield this.refreshToken(this.token);
                         this.token = result;
                         resolve(result);
                     }
                     else {
-                        console.log('roll on 4');
                         let result = yield this.getToken();
                         this.token = result;
                         resolve(result);
@@ -119,7 +114,6 @@ class Client {
                     this.token = this.mergeData(result, this.token);
                     this.decoded = yield this.decode(result);
                     this.isAuthenticated = true;
-                    console.log('token now set...', this.token);
                     resolve(result);
                 }
             })).catch((err) => {
@@ -132,7 +126,6 @@ class Client {
             try {
                 const _decoded = jwt.decode(data.access_token, { json: true });
                 this.exp = +_decoded.exp;
-                console.log("_decoded", _decoded);
                 resolve(_decoded);
             }
             catch (err) {

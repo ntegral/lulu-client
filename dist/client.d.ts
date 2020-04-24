@@ -3,7 +3,6 @@ import { LuluConfigOptions, JwtPayload } from './common/interfaces/index';
 import { IAuthenticationResponse } from './common/interfaces/index';
 export declare class Client {
     private config;
-    private clock;
     private tokenKey;
     private client_id;
     private client_secret;

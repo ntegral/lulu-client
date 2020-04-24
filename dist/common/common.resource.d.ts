@@ -54,7 +54,7 @@ export declare namespace resource {
         transit_time: number;
     }
     interface IShippingOptions {
-        list(params: ShippingListOptions): Promise<IList<ShippingOption>>;
+        list(params?: ShippingListOptions): Promise<IList<ShippingOption>>;
     }
     class ShippingOptions implements IShippingOptions {
         private client;
@@ -252,7 +252,7 @@ export declare namespace resource {
     class PrintJobs implements IPrintJobs {
         private client;
         constructor(client: Client);
-        list(params: PrintJobListOptions): Promise<IList<PrintJob>>;
+        list(params?: PrintJobListOptions): Promise<IList<PrintJob>>;
         statistics(params: PrintJobStatisticsOptions): Promise<JobStatistics>;
         retrieve(id: string): Promise<PrintJob>;
         cost(id: string): Promise<PrintJobCost>;
