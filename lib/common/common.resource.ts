@@ -71,7 +71,7 @@ export namespace resource {
     }
 
     export interface IShippingOptions {
-        list(params: ShippingListOptions): Promise<IList<ShippingOption>>;
+        list(params?: ShippingListOptions): Promise<IList<ShippingOption>>;
     }
 
     export class ShippingOptions implements IShippingOptions {
@@ -82,13 +82,11 @@ export namespace resource {
          * @return Promise<IList<<ShippingOption>>
          */
         async list(params?: ShippingListOptions): Promise<IList<ShippingOption>> {
-            // console.log('list params', params);
             let opts: rp.OptionsWithUri = {
                 method: 'GET',
                 uri: '/print-shipping-options/',
                 qs: params
             };
-            // console.log('qs', opts.qs);
             return await this.client.request(opts);
         }
     }
@@ -295,17 +293,11 @@ export namespace resource {
 
     export interface IPrintJobs {
         list(params: PrintJobListOptions): Promise<IList<PrintJob>>
-
         statistics(params: PrintJobStatisticsOptions): Promise<JobStatistics>
-
         retrieve(id: string): Promise<PrintJob>
-
         cost(id: string): Promise<PrintJobCost>
-
         status(id: string): Promise<Status>
-
         calculation(param: PrintJobCalculationOptions): Promise<PrintJobCost>
-
         create(params: PrintJobCreateOptions) : Promise<PrintJob>
     }
 
@@ -318,14 +310,12 @@ export namespace resource {
          * @param { PrintJobListOptions } params - the print job list options
          * @return Promise<IList<Printable>>
          */
-        async list(params: PrintJobListOptions): Promise<IList<PrintJob>> {
-            // console.log('list params', params);
+        async list(params?: PrintJobListOptions): Promise<IList<PrintJob>> {
             let opts: rp.OptionsWithUri = {
                 method: 'GET',
                 uri: '/print-jobs/',
                 qs: params
             };
-            // console.log('qs', opts.qs);
             return await this.client.request(opts);
         }
 
@@ -344,7 +334,6 @@ export namespace resource {
                 },
                 qs: params
             };
-
             return await this.client.request(opts);
         }
 
@@ -362,7 +351,6 @@ export namespace resource {
                     'Content-Type': 'application/json',
                 },
             };
-
             return await this.client.request(opts);
         }
 
@@ -381,7 +369,6 @@ export namespace resource {
                     'Content-Type': 'application/json',
                 },
             };
-
             return await this.client.request(opts);
         }
 

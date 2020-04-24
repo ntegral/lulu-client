@@ -7,7 +7,6 @@ import { LuluConfigOptions, LuluApiCredConfigOption, JwtPayload } from './common
 import { IAuthenticationResponse, LuluApiKeyConfigOption } from './common/interfaces/index';
 
 export class Client {
-    private clock!: moment.Moment;
     private tokenKey!: string;
     private client_id!: string;
     private client_secret!: string;
@@ -55,28 +54,27 @@ export class Client {
 
         return new Promise(async(resolve, reject) => {
             try {
-                this.clock = moment();
                 let now = moment();
                 if (!this.isAuthenticated) {
                     let result = await this.getToken();
-                    console.log('roll on 1');
+                    // console.log('roll on 1');
                     this.token = result;
                     resolve(result);
                 }
                 else if (this.isAuthenticated && this.decoded && now.isSameOrBefore(moment.unix(+this.decoded.exp).subtract(30,'minutes'))) {
-                    console.log('roll on 2');
+                    // console.log('roll on 2');
                     let expiry = moment.unix(+this.decoded.exp).toLocaleString();
                     let result = this.token;
                     resolve(result);
                 }
-                else if (this.isAuthenticated && this.decoded && now.isSameOrAfter(moment.unix(+this.decoded.exp).subtract(30,'minutes')) && now.isSameOrBefore(moment.unix(+this.decoded.exp))) {
-                    console.log('roll on 3')
+                else if (this.isAuthenticated && this.decoded && now.isSameOrAfter(moment.unix(+this.decoded.exp).subtract(30,'minutes')) && now.isBefore(moment.unix(+this.decoded.exp).subtract(10,'minutes'))) {
+                    // console.log('roll on 3')
                     let result = await this.refreshToken(this.token);
                     this.token = result;
                     resolve(result);
                 }
                 else {
-                    console.log('roll on 4')
+                    // console.log('roll on 4')
                     let result = await this.getToken();
                     this.token = result;
                     resolve(result);
@@ -125,7 +123,6 @@ export class Client {
                     this.token = this.mergeData(result,this.token);
                     this.decoded = await this.decode(result);
                     this.isAuthenticated = true;
-                    console.log('token now set...', this.token);
                     resolve(result);
                 }
             }).catch((err) => {
@@ -142,9 +139,7 @@ export class Client {
         return new Promise((resolve, reject) => {
             try {
                 const _decoded: JwtPayload = jwt.decode(data.access_token, { json: true }) as JwtPayload;
-                //const _decoded = jwt.verify(data.access_token, (this.config as LuluApiCredConfigOption).client_secret) as JwtDecodedResponse;
                 this.exp = +_decoded.exp;
-                console.log("_decoded", _decoded);
                 resolve(_decoded);
             } catch (err) {
                 reject(err);
@@ -191,8 +186,6 @@ export class Client {
      * @returns rp.RequestPromise
      */
     async request(data: rp.OptionsWithUri): Promise<any> {
-        // console.log('what am i sending here', data);
-        // console.log('default headers', this.defaultHeaders);
         let status = await this.init();
         return await this.createRequest(data);
     }
