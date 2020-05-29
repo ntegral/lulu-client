@@ -213,10 +213,10 @@ export declare namespace resource {
     interface PrintJobInterior extends PrintJobSource {
     }
     interface PrintableNormalizationCover extends PrintJobSource {
-        job_id: string;
+        job_id?: string;
     }
     interface PrintableNormalizationInterior extends PrintJobSource {
-        job_id: string;
+        job_id?: string;
     }
     interface PrintJobCreateOptions {
         contact_email: string;

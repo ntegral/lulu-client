@@ -260,11 +260,11 @@ export namespace resource {
     export interface PrintJobCover extends PrintJobSource { }
     export interface PrintJobInterior extends PrintJobSource {}
     export interface PrintableNormalizationCover extends PrintJobSource {
-        job_id: string;
+        job_id?: string;
     }
 
     export interface PrintableNormalizationInterior extends PrintJobSource {
-        job_id: string;
+        job_id?: string;
     }
 
     export interface PrintJobCreateOptions {
