@@ -30,7 +30,7 @@
   "author": "ntegral inc.",
   "license": "ISC",
   "dependencies": {
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "moment": "^2.24.0",
     "request": "^2.88.2",
     "request-promise": "^4.2.5"
